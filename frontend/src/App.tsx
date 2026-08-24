@@ -1,0 +1,84 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
+import Students from './pages/Students';
+import StudentProfile from './pages/StudentProfile';
+import Enrollments from './pages/Enrollments';
+import Financial from './pages/Financial';
+import Mensalidades from './pages/Mensalidades';
+import Carnes from './pages/Carnes';
+import Schedule from './pages/Schedule';
+import Reports from './pages/Reports';
+import Audit from './pages/Audit';
+import Planos from './pages/Planos';
+import Contratos from './pages/Contratos';
+import Settings from './pages/Settings';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0b1220]">
+      <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-primary-600/20 border-t-primary-600 dark:border-primary-400/20 dark:border-t-primary-400" />
+    </div>
+  );
+  if (!user) return <Navigate to="/login" />;
+  return <Layout>{children}</Layout>;
+}
+
+function PermissionRoute({ permission, children }: { permission: string; children: React.ReactNode }) {
+  const { user, loading, hasPermission } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0b1220]">
+      <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-primary-600/20 border-t-primary-600 dark:border-primary-400/20 dark:border-t-primary-400" />
+    </div>
+  );
+  if (!user) return <Navigate to="/login" />;
+  if (!hasPermission(permission)) return <Navigate to="/" />;
+  return <Layout>{children}</Layout>;
+}
+
+function HomeRoute() {
+  const { user, loading, hasPermission } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0b1220]">
+      <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-primary-600/20 border-t-primary-600 dark:border-primary-400/20 dark:border-t-primary-400" />
+    </div>
+  );
+  if (user) {
+    if (!hasPermission('dashboard')) return <Navigate to="/settings" />;
+    return <Layout><Dashboard /></Layout>;
+  }
+  return <Landing />;
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<HomeRoute />} />
+          <Route path="/students" element={<PermissionRoute permission="students"><Students /></PermissionRoute>} />
+          <Route path="/students/:id" element={<PermissionRoute permission="students"><StudentProfile /></PermissionRoute>} />
+          <Route path="/enrollments" element={<PermissionRoute permission="enrollments"><Enrollments /></PermissionRoute>} />
+          <Route path="/financial" element={<PermissionRoute permission="financial"><Financial /></PermissionRoute>} />
+          <Route path="/planos" element={<PermissionRoute permission="financial"><Planos /></PermissionRoute>} />
+          <Route path="/contratos" element={<PermissionRoute permission="financial"><Contratos /></PermissionRoute>} />
+          <Route path="/mensalidades" element={<PermissionRoute permission="financial"><Mensalidades /></PermissionRoute>} />
+          <Route path="/carnes" element={<PermissionRoute permission="financial"><Carnes /></PermissionRoute>} />
+          <Route path="/schedule" element={<PermissionRoute permission="schedule"><Schedule /></PermissionRoute>} />
+          <Route path="/reports" element={<PermissionRoute permission="reports"><Reports /></PermissionRoute>} />
+          <Route path="/audit" element={<PermissionRoute permission="audit"><Audit /></PermissionRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}

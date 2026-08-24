@@ -1,0 +1,11 @@
+venv/
+.env
+*.db
+uploads/
+student_files/
+__pycache__/
+*.pyc
+*.pyo
+.git
+.gitignore
+README.md

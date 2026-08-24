@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --chart-bg: #ffffff;
+    --chart-text: #0f172a;
+  }
+  .dark {
+    --chart-bg: #111a2e;
+    --chart-text: #e2e8f0;
+    color-scheme: dark;
+  }
+
+  .dark select option {
+    background-color: #1e293b;
+    color: #e2e8f0;
+  }
+
+  .dark select option:checked {
+    background-color: #334155;
+    color: #ffffff;
+  }
+
+  body {
+    @apply antialiased bg-slate-50 text-slate-900;
+  }
+
+  .dark body {
+    @apply bg-[#0b1220] text-slate-100;
+  }
+
+  ::selection {
+    @apply bg-primary-500/20 text-primary-700 dark:text-primary-200;
+  }
+
+  input, select, textarea {
+    @apply outline-none;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer components {
+  .card-surface {
+    @apply bg-white dark:bg-[#111a2e] border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-card;
+  }
+
+  .glass {
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/40 dark:border-white/10;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-600 to-violet-500 bg-clip-text text-transparent;
+  }
+
+  .input-base {
+    @apply w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10;
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 disabled:opacity-50 disabled:pointer-events-none;
+  }
+}
+
+@layer utilities {
+  .bg-dot-grid {
+    background-image: radial-gradient(circle, rgb(99 102 241 / 0.12) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .dark .bg-dot-grid {
+    background-image: radial-gradient(circle, rgb(99 102 241 / 0.16) 1px, transparent 1px);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-spinner {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

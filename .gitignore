@@ -1,0 +1,42 @@
+# Dependências
+venv/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+
+# Build
+dist/
+*.egg-info/
+
+# Banco de dados e dados de clientes (NUNCA versionar)
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+
+# Configuração e segredos
+.env
+.env.local
+.env.production
+
+# Logs e cache
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Pastas de dados e uploads de alunos
+student_files/
+backend/frontend_dist/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
