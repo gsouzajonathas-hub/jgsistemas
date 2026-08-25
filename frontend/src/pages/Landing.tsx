@@ -60,11 +60,12 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-[#0b1220]">
       {/* Fundo com a foto da escola */}
+      <div className="fixed inset-0 bg-slate-100 dark:bg-[#0b1220]" />
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 bg-contain bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${frenteEscola})` }}
       />
-      <div className="fixed inset-0 bg-slate-50/70 dark:bg-[#0b1220]/80" />
+      <div className="fixed inset-0 bg-slate-50/85 dark:bg-[#0b1220]/85" />
 
       <div className="relative z-10">
       {/* Navbar */}
