@@ -179,9 +179,12 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, db: Asyn
         )
         if not result_email["success"]:
             import os
+            detalhe = result_email.get("error") or "erro desconhecido"
             if os.getenv("ENVIRONMENT") != "production":
-                print(f"[password-reset] SMTP indisponível ao enviar para {req.email}. "
-                      "Configure SMTP_HOST/SMTP_USER/SMTP_PASS para entrega de e-mails.")
+                print(f"[password-reset] Falha ao enviar e-mail para {req.email}: {detalhe}")
+                print("[password-reset] Configure SMTP_HOST/SMTP_USER/SMTP_PASS no .env para entrega de e-mails.")
+            else:
+                print(f"[password-reset] Falha no envio de e-mail: {detalhe}", flush=True)
 
     return {"message": "Se o e-mail existir, você receberá as instruções."}
 
