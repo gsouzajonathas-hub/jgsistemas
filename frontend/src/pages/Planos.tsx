@@ -190,9 +190,19 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState(() => planData ? {
+  const [form, setForm] = useState<{
+    name: string;
+    course_id: string | number;
+    duration_months: string | number;
+    value: string | number;
+    discount_type: 'percent' | 'fixed';
+    discount_value: string | number;
+    upfront_discount_pct: string | number;
+    installments_default: string | number;
+    description: string;
+  }>(() => planData ? {
     name: planData.name,
-    course_id: planData.course_id ?? 0,
+    course_id: planData.course_id ?? '',
     duration_months: planData.duration_months,
     value: planData.value,
     discount_type: planData.discount_type as 'percent' | 'fixed',
@@ -201,25 +211,32 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
     installments_default: planData.default_installments,
     description: planData.description || '',
   } : {
-    name: '', course_id: 0, duration_months: 4, value: 0,
-    discount_type: 'percent' as 'percent' | 'fixed', discount_value: 0,
-    upfront_discount_pct: 0, installments_default: 4, description: '',
+    name: '', course_id: '', duration_months: '', value: '',
+    discount_type: 'percent' as 'percent' | 'fixed', discount_value: '',
+    upfront_discount_pct: '', installments_default: '', description: '',
   });
   const [saving, setSaving] = useState(false);
 
-  const calc = calcPlan(form);
-  const parcelaExemplo = calc.final_value / Math.min(calc.default_installments, form.duration_months || 1);
+  const calc = calcPlan({
+    value: Number(form.value) || 0,
+    duration_months: Number(form.duration_months) || 1,
+    discount_type: form.discount_type,
+    discount_value: Number(form.discount_value) || 0,
+    upfront_discount_pct: Number(form.upfront_discount_pct) || 0,
+    installments_default: Number(form.installments_default) || undefined,
+  });
+  const parcelaExemplo = calc.final_value / Math.min(calc.default_installments, Number(form.duration_months) || 1);
 
   const handleSave = async () => {
     if (!form.name) { alert('Nome é obrigatório'); return; }
-    if (!form.value || form.value <= 0) { alert('Informe a mensalidade de referência'); return; }
+    if (!form.value || Number(form.value) <= 0) { alert('Informe a mensalidade de referência'); return; }
     setSaving(true);
     const payload = {
       name: form.name,
       value: Number(form.value),
       description: form.description,
       installments: calc.default_installments,
-      course_id: form.course_id || null,
+      course_id: form.course_id ? Number(form.course_id) : null,
       duration_months: Number(form.duration_months) || 1,
       discount_type: form.discount_type,
       discount_value: Number(form.discount_value) || 0,
@@ -247,7 +264,7 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
             </div>
             <div>
               <label className={labelCls}>Curso</label>
-              <select value={form.course_id} onChange={e => setForm(f => ({ ...f, course_id: Number(e.target.value) }))} className={inputCls}>
+              <select value={form.course_id || ''} onChange={e => setForm(f => ({ ...f, course_id: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls}>
                 <option value="">Nenhum</option>
                 {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -257,13 +274,13 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Duração (meses) *</label>
-              <input type="number" min={1} max={36} value={form.duration_months}
-                onChange={e => setForm(f => ({ ...f, duration_months: Number(e.target.value) }))} className={inputCls} />
+              <input type="number" min={1} max={36} value={form.duration_months || ''}
+                onChange={e => setForm(f => ({ ...f, duration_months: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls} placeholder="4" />
             </div>
             <div>
               <label className={labelCls}>Mensalidade de referência *</label>
-              <input type="number" min={0} step="0.01" value={form.value}
-                onChange={e => setForm(f => ({ ...f, value: Number(e.target.value) }))} className={inputCls} placeholder="300.00" />
+              <input type="number" min={0} step="0.01" value={form.value || ''}
+                onChange={e => setForm(f => ({ ...f, value: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls} placeholder="300.00" />
             </div>
           </div>
 
@@ -280,21 +297,21 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>{form.discount_type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'}</label>
-                <input type="number" min={0} step="0.01" value={form.discount_value}
-                  onChange={e => setForm(f => ({ ...f, discount_value: Number(e.target.value) }))} className={inputCls} />
+                <input type="number" min={0} step="0.01" value={form.discount_value || ''}
+                  onChange={e => setForm(f => ({ ...f, discount_value: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Desconto extra à vista (%)</label>
-                <input type="number" min={0} max={100} step="0.01" value={form.upfront_discount_pct}
-                  onChange={e => setForm(f => ({ ...f, upfront_discount_pct: Number(e.target.value) }))} className={inputCls} />
+                <input type="number" min={0} max={100} step="0.01" value={form.upfront_discount_pct || ''}
+                  onChange={e => setForm(f => ({ ...f, upfront_discount_pct: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls} />
               </div>
             </div>
           </div>
 
           <div>
             <label className={labelCls}>Parcelas padrão (máx. = duração)</label>
-            <input type="number" min={1} max={Math.max(1, form.duration_months || 1)} value={calc.default_installments}
-              onChange={e => setForm(f => ({ ...f, installments_default: Number(e.target.value) }))} className={inputCls} />
+            <input type="number" min={1} max={Math.max(1, Number(form.duration_months) || 1)} value={calc.default_installments || ''}
+              onChange={e => setForm(f => ({ ...f, installments_default: e.target.value === '' ? '' : Number(e.target.value) }))} className={inputCls} />
           </div>
 
           <div>
@@ -305,10 +322,10 @@ function PlanModal({ planData, courses, onClose, onSaved }: {
           {/* Cálculo ao vivo */}
           <div className="rounded-xl border border-primary-200 dark:border-primary-500/20 bg-primary-50/60 dark:bg-primary-500/5 p-4 space-y-1.5">
             <p className="text-xs font-bold uppercase tracking-wider text-primary-700 dark:text-primary-400 mb-2">Cálculo automático</p>
-            <Row label={`${fmtBRL(form.value)} × ${form.duration_months} meses`} value={fmtBRL(calc.gross_total)} />
+            <Row label={`${fmtBRL(Number(form.value) || 0)} × ${form.duration_months} meses`} value={fmtBRL(calc.gross_total)} />
             <Row label="Desconto do plano" value={`− ${fmtBRL(calc.discount_amount)}`} accent="text-green-600 dark:text-green-400" />
             <Row label="Valor do plano" value={fmtBRL(calc.final_value)} bold />
-            {form.upfront_discount_pct > 0 && (
+            {Number(form.upfront_discount_pct) > 0 && (
               <>
                 <Row label={`À vista (−${form.upfront_discount_pct}%)`} value={fmtBRL(calc.upfront_value)} bold />
               </>
@@ -400,7 +417,7 @@ function ContractModal({ plan, onClose, onDone }: {
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Aluno *</label>
-                <select value={studentId} onChange={e => setStudentId(Number(e.target.value))} className={inputCls}>
+                <select value={studentId || ''} onChange={e => setStudentId(e.target.value === '' ? 0 : Number(e.target.value))} className={inputCls}>
                   <option value="">Selecione...</option>
                   {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                 </select>

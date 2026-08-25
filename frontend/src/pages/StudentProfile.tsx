@@ -333,7 +333,13 @@ function PayModal({ installment, onClose, onPaid }: { installment: any; onClose:
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>
-          <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
+          <input type="text" inputMode="decimal" placeholder="0,00"
+            value={form.amount > 0 ? form.amount.toFixed(2).replace('.', ',') : ''}
+            onChange={e => {
+              const cleaned = e.target.value.replace(/[^\d,]/g, '').replace(',', '.');
+              const num = parseFloat(cleaned);
+              setForm(f => ({ ...f, amount: isNaN(num) ? 0 : num }));
+            }}
             className="w-full px-3 py-2 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm" />
         </div>
         <div>

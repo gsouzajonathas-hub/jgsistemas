@@ -642,12 +642,13 @@ function NewCarneModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.late_fee_pct}
+                    value={form.late_fee_pct || ''}
                     onChange={(e) => {
                       const cleaned = e.target.value.replace(/[^\d.]/g, '');
                       const num = parseFloat(cleaned);
-                      setForm(f => ({ ...f, late_fee_pct: isNaN(num) ? 0 : num }));
+                      setForm(f => ({ ...f, late_fee_pct: e.target.value === '' ? 0 : (isNaN(num) ? 0 : num) }));
                     }}
+                    placeholder="2,00"
                     className="w-full px-4 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm"
                   />
                 </div>
@@ -656,12 +657,13 @@ function NewCarneModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={form.interest_daily_pct}
+                    value={form.interest_daily_pct || ''}
                     onChange={(e) => {
                       const cleaned = e.target.value.replace(/[^\d.]/g, '');
                       const num = parseFloat(cleaned);
-                      setForm(f => ({ ...f, interest_daily_pct: isNaN(num) ? 0 : num }));
+                      setForm(f => ({ ...f, interest_daily_pct: e.target.value === '' ? 0 : (isNaN(num) ? 0 : num) }));
                     }}
+                    placeholder="0,033"
                     className="w-full px-4 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm"
                   />
                 </div>
