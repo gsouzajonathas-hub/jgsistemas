@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://JGSISTEMAS-BACKEND.onrender.com/api/:path*"
+      "destination": "https://jgsistemas-backend.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://JGSISTEMAS-BACKEND.onrender.com/uploads/:path*"
+      "destination": "https://jgsistemas-backend.onrender.com/uploads/:path*"
     }
   ]
 }
