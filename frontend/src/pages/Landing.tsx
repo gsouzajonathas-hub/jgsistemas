@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import LoginForm from '../components/LoginForm';
 import { Modal } from '../components/ui';
-import frenteEscola from '../assets/frente_escola.jpg';
+import frenteEscola from '../assets/logo_escola.jpeg';
 import {
   GraduationCap, Moon, Sun, ShieldCheck, Globe, BarChart3,
   Sparkles, LayoutDashboard, Users, UserPlus,
