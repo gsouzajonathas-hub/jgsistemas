@@ -37,6 +37,8 @@ export const authAPI = {
   createUser: (data: { name: string; email: string; password: string; role?: string; permissions?: string[] }) => api.post('/auth/register', data),
   updateUser: (id: number, data: { name?: string; email?: string; role?: string; permissions?: string[]; is_active?: boolean }) => api.put(`/auth/users/${id}`, data),
   deleteUser: (id: number) => api.delete(`/auth/users/${id}`),
+  supabaseSync: (supabaseAccessToken: string) =>
+    axios.post('/api/auth/supabase-sync', {}, { headers: { Authorization: `Bearer ${supabaseAccessToken}` } }),
 };
 
 export const studentsAPI = {

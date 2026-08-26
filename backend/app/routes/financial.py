@@ -534,7 +534,9 @@ async def generate_month(data: GenerateMonthSchema, current_user=Depends(require
 
 @router.post("/installments")
 async def create_installment(data: InstallmentSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
-    from datetime import date
+    student_result = await db.execute(select(Student).where(Student.id == data.student_id))
+    if not student_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
     d = data.model_dump()
     if d.get("due_date"):
         d["due_date"] = date.fromisoformat(d["due_date"])

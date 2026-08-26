@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
+import secrets
+import httpx
 
 router = APIRouter()
 
@@ -151,6 +153,78 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
                     "user", None, f"email={req.email} role={role}", ip_address=ip)
     await db.commit()
     return {"message": "Usuário criado com sucesso"}
+
+
+@router.post("/supabase-sync")
+async def supabase_sync(request: Request, db: AsyncSession = Depends(get_db)):
+    """Cria/sincroniza usuário local a partir de uma sessão Supabase (ex.: login Google).
+
+    Recebe o access_token do Supabase no header Authorization e valida direto
+    com o servidor do Supabase antes de criar o usuário.
+    """
+    ip = client_ip(request)
+    auth_header = request.headers.get("authorization", "")
+    token = auth_header[7:].strip() if auth_header.lower().startswith("bearer ") else ""
+    sb_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+    sb_key = os.getenv("SUPABASE_ANON_KEY", "")
+    if not token or not sb_url:
+        raise HTTPException(status_code=503, detail="Autenticação Supabase não configurada neste servidor")
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(
+            f"{sb_url}/auth/v1/user",
+            headers={"apikey": sb_key, "Authorization": f"Bearer {token}"},
+        )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Sessão Supabase inválida ou expirada")
+    info = resp.json()
+    email = info.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Conta sem e-mail válido")
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        meta = info.get("user_metadata") or {}
+        name = meta.get("full_name") or meta.get("name") or email.split("@")[0]
+        avatar = meta.get("avatar_url") or meta.get("picture") or None
+        total = await db.execute(select(func.count()).select_from(User))
+        first_user = (total.scalar() or 0) == 0
+        unusable_password = hash_password(secrets.token_urlsafe(24))
+        user = User(
+            name=name,
+            email=email,
+            password_hash=unusable_password,
+            role="admin" if first_user else "secretary",
+            avatar_url=avatar,
+        )
+        db.add(user)
+        await log_audit(db, user, "user.create_oauth", "user", None, f"email={email} provider=supabase", ip_address=ip)
+        await db.commit()
+        await db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Usuário desativado. Contate o administrador.")
+
+    user.last_login = datetime.now(timezone.utc)
+    await log_audit(db, user, "login", "user", user.id, ip_address=ip)
+    await db.commit()
+
+    permissions = json.loads(user.permissions) if user.permissions else None
+    t = create_access_token({"sub": str(user.id), "role": user.role})
+    return LoginResponse(
+        access_token=t,
+        user={
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "permissions": permissions,
+            "avatar_url": user.avatar_url,
+            "school_id": user.school_id
+        }
+    )
 
 
 @router.post("/forgot-password")

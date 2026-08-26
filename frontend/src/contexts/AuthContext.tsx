@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI } from '../services/api';
+import { supabase, isSupabaseConfigured } from '../services/supabase';
 import type { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  applySession: (token: string, userData: User) => void;
   logout: () => void;
   loading: boolean;
   hasPermission: (permission: string) => boolean;
@@ -37,6 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
+  const applySession = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  // Sincroniza sessão Supabase (ex.: retorno do login com Google)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.access_token) return;
+      if (localStorage.getItem('token')) return;
+      try {
+        const res = await authAPI.supabaseSync(session.access_token);
+        applySession(res.data.access_token, res.data.user);
+      } catch {
+        // sincronização falhou; usuário pode tentar novamente
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -57,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, hasPermission }}>
+    <AuthContext.Provider value={{ user, login, applySession, logout, loading, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

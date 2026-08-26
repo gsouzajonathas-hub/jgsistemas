@@ -475,4 +475,9 @@ def build_receipt_pdf(payment, installment, student, settings) -> bytes:
         elements.append(Paragraph("  |  ".join(contact_parts), center_small))
 
     doc.build(elements)
+    if logo_path:
+        try:
+            os.unlink(logo_path)
+        except OSError:
+            pass
     return stream.getvalue()

@@ -227,6 +227,7 @@ async def students_pdf(current_user=Depends(get_current_user), db: AsyncSession 
     RED_600 = "#CA2122"
     SLATE_50 = "#F8FAFC"
     SLATE_200 = "#E2E8F0"
+    SLATE_500 = "#64748B"
 
     from app.services.report_style import draw_report_header, draw_report_footer
 
@@ -368,6 +369,7 @@ async def overdue_pdf(current_user=Depends(get_current_user), db: AsyncSession =
     RED_50 = "#FDECEC"
     SLATE_50 = "#F8FAFC"
     SLATE_200 = "#E2E8F0"
+    SLATE_500 = "#64748B"
 
     from app.services.report_style import draw_report_header, draw_report_footer
 
