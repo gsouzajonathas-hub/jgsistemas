@@ -5,7 +5,7 @@ from .teacher import Teacher
 from .course import Course
 from .class_group import ClassGroup
 from .enrollment import Enrollment
-from .financial import FinancialPlan, Carne, Installment, Discount, Payment
+from .financial import FinancialPlan, Carne, Installment, Discount, Payment, FinancialContract
 from .schedule import CalendarEvent
 from .communication import CommunicationLog
 from .settings import SchoolSettings
@@ -16,7 +16,7 @@ from .materials import TeachingMaterial, MaterialSale
 __all__ = [
     "User", "School", "Student", "Responsible", "Teacher", "Course",
     "ClassGroup", "Enrollment",
-    "FinancialPlan", "Carne", "Installment", "Discount", "Payment",
+    "FinancialPlan", "Carne", "Installment", "Discount", "Payment", "FinancialContract",
     "CalendarEvent", "CommunicationLog", "SchoolSettings",
     "FileUpload", "AuditLog", "TeachingMaterial", "MaterialSale",
 ]
