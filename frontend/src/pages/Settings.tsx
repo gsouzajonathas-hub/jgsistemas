@@ -11,6 +11,11 @@ const ALL_PERMISSIONS = [
   { key: 'students', label: 'Alunos' },
 
   { key: 'enrollments', label: 'Matrículas' },
+  { key: 'classes', label: 'Turmas' },
+  { key: 'attendance', label: 'Frequência' },
+  { key: 'evaluations', label: 'Avaliações' },
+  { key: 'boletins', label: 'Boletins' },
+  { key: 'certificates', label: 'Certificados' },
   { key: 'financial', label: 'Financeiro' },
   { key: 'schedule', label: 'Agenda' },
   { key: 'reports', label: 'Relatórios' },

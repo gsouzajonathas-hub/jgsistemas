@@ -8,6 +8,11 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import StudentProfile from './pages/StudentProfile';
 import Enrollments from './pages/Enrollments';
+import Classes from './pages/Classes';
+import Attendance from './pages/Attendance';
+import Evaluations from './pages/Evaluations';
+import Boletim from './pages/Boletim';
+import Certificates from './pages/Certificates';
 import Financial from './pages/Financial';
 import Mensalidades from './pages/Mensalidades';
 import Carnes from './pages/Carnes';
@@ -66,6 +71,11 @@ export default function App() {
           <Route path="/students" element={<PermissionRoute permission="students"><Students /></PermissionRoute>} />
           <Route path="/students/:id" element={<PermissionRoute permission="students"><StudentProfile /></PermissionRoute>} />
           <Route path="/enrollments" element={<PermissionRoute permission="enrollments"><Enrollments /></PermissionRoute>} />
+          <Route path="/classes" element={<PermissionRoute permission="classes"><Classes /></PermissionRoute>} />
+          <Route path="/attendance" element={<PermissionRoute permission="attendance"><Attendance /></PermissionRoute>} />
+          <Route path="/evaluations" element={<PermissionRoute permission="evaluations"><Evaluations /></PermissionRoute>} />
+          <Route path="/boletins" element={<PermissionRoute permission="boletins"><Boletim /></PermissionRoute>} />
+          <Route path="/certificates" element={<PermissionRoute permission="certificates"><Certificates /></PermissionRoute>} />
           <Route path="/financial" element={<PermissionRoute permission="financial"><Financial /></PermissionRoute>} />
           <Route path="/planos" element={<PermissionRoute permission="financial"><Planos /></PermissionRoute>} />
           <Route path="/contratos" element={<PermissionRoute permission="financial"><Contratos /></PermissionRoute>} />
