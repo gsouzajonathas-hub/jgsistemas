@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -17,12 +17,12 @@ router = APIRouter()
 
 @router.get("/{student_id}")
 async def get_student_profile(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
+result = await db.execute(
         select(Student).where(Student.id == student_id).options(selectinload(Student.responsible))
     )
     student = result.scalar_one_or_none()
     if not student:
-        return {"error": "Aluno não encontrado"}
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
 
     enrollments = await db.execute(
         select(Enrollment).where(Enrollment.student_id == student_id).order_by(Enrollment.created_at.desc())

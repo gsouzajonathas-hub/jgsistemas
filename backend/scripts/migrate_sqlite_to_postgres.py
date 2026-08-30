@@ -10,9 +10,6 @@ Funcionamento:
    preservando os IDs originais.
 3. Converte valores boolean (SQLite usa 0/1) para o tipo boolean do Postgres.
 4. Atualiza as sequences (setval) para não colidir com INSERTs futuros.
-
-Tabelas órfãs (attendances, certificates, evaluations, grade_weight_configs,
-subscriptions) NÃO possuem modelo/rota ativa e não são migradas por padrão.
 """
 import argparse
 import asyncio
@@ -38,6 +35,10 @@ import app.models.settings
 import app.models.file_upload
 import app.models.audit_log
 import app.models.materials
+import app.models.attendance
+import app.models.evaluation
+import app.models.certificate
+import app.models.weight_config
 
 TABELAS_COM_MODELO = [
     "users",
@@ -61,9 +62,13 @@ TABELAS_COM_MODELO = [
     "communication_logs",
     "file_uploads",
     "audit_logs",
+    "attendances",
+    "evaluations",
+    "certificates",
+    "grade_weight_configs",
 ]
 
-TABELAS_ORFAS = ["attendances", "certificates", "evaluations", "grade_weight_configs", "subscriptions"]
+TABELAS_ORFAS: list = []
 
 
 def _colunas_sq(sq, tabela: str) -> list:
@@ -119,7 +124,8 @@ async def migrar(args):
     tabelas_ord = [t for t in TABELAS_COM_MODELO if (not tabelas) or t in tabelas]
 
     print(f"Migrando {len(tabelas_ord)} tabelas de {sqlite_path} -> Postgres")
-    print(f"(orefas NAO migradas: {', '.join(TABELAS_ORFAS)})\n")
+    if TABELAS_ORFAS:
+        print(f"(orfas NAO migradas: {', '.join(TABELAS_ORFAS)})\n")
 
     async with pg.begin() as conn:
         if not args.dry_run:

@@ -129,6 +129,7 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
 
     validate_password(req.password)
 
+    admin = None
     total = await db.execute(select(func.count()).select_from(User))
     if (total.scalar() or 0) > 0:
         admin = await _optional_admin_user(request, db)
@@ -149,7 +150,7 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
         permissions=perms_json
     )
     db.add(user)
-    await log_audit(db, admin, "user.create",
+    await log_audit(db, admin or user, "user.create",
                     "user", None, f"email={req.email} role={role}", ip_address=ip)
     await db.commit()
     return {"message": "Usuário criado com sucesso"}

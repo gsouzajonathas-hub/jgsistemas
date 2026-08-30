@@ -31,6 +31,7 @@ async def send_email(to: str, subject: str, body: str) -> dict:
             start_tls=True,
             username=smtp_user,
             password=smtp_pass,
+            timeout=30,
         )
         return {"success": True, "error": None}
     except Exception as e:
