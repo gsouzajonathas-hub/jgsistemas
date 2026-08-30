@@ -12,7 +12,8 @@ from app.routes import (
     auth, students, enrollments,
     financial, carnes, schedule, communication,
     reports, search, settings, students_profile, materials,
-    courses, audit
+    courses, audit,
+    teachers, classes, attendance, evaluations, boletins, certificates, weight_config,
 )
 import os
 
@@ -163,6 +164,13 @@ app.include_router(students_profile.router, prefix="/api/student-profile", tags=
 app.include_router(materials.router, prefix="/api/materials", tags=["Materiais Didáticos"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Auditoria"])
 app.include_router(communication.router, prefix="/api/communication", tags=["Comunicação"])
+app.include_router(teachers.router, prefix="/api/teachers", tags=["Professores"])
+app.include_router(classes.router, prefix="/api/classes", tags=["Turmas"])
+app.include_router(attendance.router, prefix="/api/attendance", tags=["Frequência"])
+app.include_router(evaluations.router, prefix="/api/evaluations", tags=["Avaliações"])
+app.include_router(boletins.router, prefix="/api/boletins", tags=["Boletins"])
+app.include_router(certificates.router, prefix="/api/certificates", tags=["Certificados"])
+app.include_router(weight_config.router, prefix="/api/weight-config", tags=["Pesos de Avaliação"])
 
 
 @app.get("/api/health")
@@ -175,6 +183,9 @@ _INDEX_HTML = os.path.join(FRONTEND_DIR, "index.html")
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
+    if full_path.startswith("api/"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Rota não encontrada")
     file_path = os.path.join(FRONTEND_DIR, full_path)
     if full_path and os.path.isfile(file_path):
         return FileResponse(file_path)
