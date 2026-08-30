@@ -13,6 +13,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DIR / 'test.db'}"
 os.environ["SECRET_KEY"] = "chave-de-teste-sprintx-9f8e7d6c5b4a321098"
 os.environ["ENVIRONMENT"] = "test"
 os.environ["CORS_ORIGINS"] = "http://testserver"
+os.environ["RATE_LIMIT_PER_MINUTE"] = "0"  # rate limit global desligado na suíte (testado isoladamente)
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

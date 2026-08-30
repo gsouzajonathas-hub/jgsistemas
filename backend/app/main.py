@@ -2,10 +2,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from app.database import engine, Base
 from app.utils.paths import get_upload_dir
 from app.config import load_env
+from app.utils.security import global_rate_limited
 
 load_env()
 from app.routes import (
@@ -105,26 +106,42 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS restrito a origens explicitamente configuradas (nunca "*" com credentials)
+# CORS restrito a origens explicitamente configuradas (nunca "*" com credentials).
+# Registrado APÓS os middlewares decorados (add_middleware usa insert(0)) para ficar
+# EXTERNO a eles: respostas curtas do rate limit (429) também recebem headers CORS.
 _cors_env = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:3000")
 ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
-)
+
+@app.middleware("http")
+async def public_api_rate_limit(request: Request, call_next):
+    """Rate limit global para /api/* sem token (mitiga brute-force e DoS em endpoints públicos).
+
+    Config: RATE_LIMIT_PER_MINUTE (0 desliga, usado nos testes). Autenticados não são limitados.
+    Registrado por primeiro para ficar INTERNO ao security_headers (que adiciona headers ao 429).
+    """
+    if request.url.path.startswith("/api/"):
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.lower().startswith("bearer "):
+            if global_rate_limited(request):
+                return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Aguarde um minuto."})
+    return await call_next(request)
 
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    """Headers de segurança globais (mitiga clickjacking, MIME-sniffing e vazamento de referrer)."""
+    """Headers de segurança globais (clickjacking, MIME-sniffing, referrer e fingerprinting)."""
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto", "") == "https"
+    if ENVIRONMENT == "production" or is_https:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    if request.url.path.startswith("/api/"):
+        # Respostas da API são JSON: CSP rígido de defesa em profundidade.
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
     return response
 
 
@@ -140,6 +157,15 @@ async def uploads_security_headers(request: Request, call_next):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Content-Security-Policy"] = "default-src 'none'"
     return response
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 
 UPLOAD_DIR = get_upload_dir()

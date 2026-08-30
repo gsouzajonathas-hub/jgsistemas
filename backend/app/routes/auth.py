@@ -9,7 +9,10 @@ from app.utils.auth import (
     get_current_user, require_role, decode_token,
     generate_reset_token, validate_password,
 )
-from app.utils.security import is_rate_limited, client_ip
+from app.utils.security import (
+    is_rate_limited, client_ip,
+    is_account_locked, register_failed_login, reset_login_attempts,
+)
 from app.utils.audit import log_audit
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -93,13 +96,22 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
     if is_rate_limited(f"login:{ip}", limit=10, window_seconds=300):
         raise HTTPException(status_code=429, detail="Muitas tentativas. Aguarde alguns minutos.")
 
+    if is_account_locked(req.email):
+        # Resposta idêntica à falha normal: não revela existência nem bloqueio da conta.
+        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+
     result = await db.execute(select(User).where(User.email == req.email))
     user = result.scalar_one_or_none()
-    if not user or not verify_password(req.password, user.password_hash):
+    if not user:
+        # Conta inexistente não entra no lockout (evita DoS bloqueando contas de terceiros).
+        raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+    if not verify_password(req.password, user.password_hash):
+        register_failed_login(req.email)
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Conta desativada")
 
+    reset_login_attempts(req.email)
     user.last_login = datetime.now(timezone.utc)
     await log_audit(db, user, "login", "user", user.id, ip_address=ip)
     await db.commit()
