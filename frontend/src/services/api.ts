@@ -3,6 +3,7 @@ import type { User, Student, Enrollment, Installment, CalendarEvent, TeachingMat
 
 const api = axios.create({
   baseURL: '/api',
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -38,7 +39,7 @@ export const authAPI = {
   updateUser: (id: number, data: { name?: string; email?: string; role?: string; permissions?: string[]; is_active?: boolean }) => api.put(`/auth/users/${id}`, data),
   deleteUser: (id: number) => api.delete(`/auth/users/${id}`),
   supabaseSync: (supabaseAccessToken: string) =>
-    axios.post('/api/auth/supabase-sync', {}, { headers: { Authorization: `Bearer ${supabaseAccessToken}` } }),
+    axios.post('/api/auth/supabase-sync', {}, { headers: { Authorization: `Bearer ${supabaseAccessToken}` }, timeout: 30000 }),
 };
 
 export const studentsAPI = {
