@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, Student, Enrollment, Installment, CalendarEvent, TeachingMaterial, MaterialSale, SearchResult, CoursePlan } from '../types';
+import type { User, Student, Enrollment, Installment, CalendarEvent, TeachingMaterial, MaterialSale, SearchResult, CoursePlan, ClassGroup, Teacher, Evaluation, Attendance, AttendanceRecord, Certificate, Boletim, WeightConfigItem } from '../types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -185,6 +185,56 @@ export const settingsAPI = {
 export const studentProfileAPI = {
   get: (id: number) => api.get(`/student-profile/${id}`),
   pdf: (id: number) => api.get(`/student-profile/${id}/pdf`, { responseType: 'blob' }),
+};
+
+export const teachersAPI = {
+  list: () => api.get<Teacher[]>('/teachers'),
+};
+
+export const classesAPI = {
+  list: (params?: { skip?: number; limit?: number }) => api.get<ClassGroup[]>('/classes', { params }),
+  create: (data: { name: string; course_id: number; teacher_id: number; room?: string; weekdays?: string; start_time?: string; end_time?: string; max_capacity?: number; level?: string; unit?: string }) => api.post('/classes', data),
+  update: (id: number, data: { name?: string; course_id?: number; teacher_id?: number; room?: string; weekdays?: string; start_time?: string; end_time?: string; max_capacity?: number; level?: string; unit?: string }) => api.put(`/classes/${id}`, data),
+  delete: (id: number) => api.delete(`/classes/${id}`),
+};
+
+export const attendanceAPI = {
+  list: (params?: { class_group_id?: number; student_id?: number; date?: string }) => api.get<Attendance[]>('/attendance', { params }),
+  bulk: (data: { class_group_id: number; date: string; records: AttendanceRecord[] }) => api.post('/attendance/bulk', data),
+};
+
+export const evaluationsAPI = {
+  list: (params?: { student_id?: number; class_group_id?: number }) => api.get<Evaluation[]>('/evaluations', { params }),
+  create: (data: { student_id: number; class_group_id: number; eval_type: string; title: string; date?: string; score?: number; max_score?: number; weight?: number; notes?: string }) =>
+    api.post('/evaluations', data),
+  bulk: (data: { class_group_id: number; eval_type: string; title: string; date?: string; max_score?: number; weight?: number; notes?: string; scores: { student_id: number; score: number }[] }) =>
+    api.post('/evaluations/bulk', data),
+  update: (id: number, data: { student_id?: number; class_group_id?: number; eval_type?: string; title?: string; date?: string; score?: number; max_score?: number; weight?: number; notes?: string }) =>
+    api.put(`/evaluations/${id}`, data),
+  delete: (id: number) => api.delete(`/evaluations/${id}`),
+  average: (studentId: number) => api.get<{ average: number; status: string; total_evaluations: number }>(`/evaluations/average/${studentId}`),
+};
+
+export const weightConfigAPI = {
+  list: (classGroupId?: number) => api.get<WeightConfigItem[]>('/weight-config', { params: classGroupId ? { class_group_id: classGroupId } : {} }),
+  save: (data: { class_group_id: number; items: { label: string; eval_type: string; weight?: number; max_score?: number }[] }) => api.put('/weight-config', data),
+};
+
+export const boletinsAPI = {
+  students: () => api.get<{ id: number; full_name: string; english_level?: string; status?: string }[]>('/boletins/students'),
+  get: (id: number) => api.get<Boletim>(`/boletins/${id}`),
+  turma: (id: number) => api.get<{ class_name: string; teacher_name?: string; course_name?: string; level?: string; weekdays: string; start_time: string; end_time: string; rows: { student_id: number; student_name: string; average: number; status_by_grade: string; present: number; absent: number; frequency: number; situation: string; evaluations: Boletim['classes'][0]['evaluations'] }[] }>(`/boletins/turma/${id}`),
+  pdf: (id: number) => api.get(`/boletins/${id}/pdf`, { responseType: 'blob' }),
+  excel: (id: number) => api.get(`/boletins/${id}/excel`, { responseType: 'blob' }),
+  turmaPdf: (id: number) => api.get(`/boletins/turma/${id}/pdf`, { responseType: 'blob' }),
+  turmaExcel: (id: number) => api.get(`/boletins/turma/${id}/excel`, { responseType: 'blob' }),
+};
+
+export const certificatesAPI = {
+  list: () => api.get<Certificate[]>('/certificates'),
+  student: (studentId: number) => api.get<Certificate[]>(`/certificates/student/${studentId}`),
+  issue: (data: { student_id: number; class_group_id: number; level?: string }) => api.post('/certificates', data),
+  pdf: (id: number) => api.get(`/certificates/${id}/pdf`, { responseType: 'blob' }),
 };
 
 export default api;

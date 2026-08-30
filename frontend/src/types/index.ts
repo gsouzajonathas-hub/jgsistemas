@@ -198,3 +198,131 @@ export interface FinancialContract {
   signed_at: string | null;
   created_at: string | null;
 }
+
+export interface Teacher {
+  id: number;
+  full_name: string;
+}
+
+export interface ClassGroup {
+  id: number;
+  name: string;
+  course_id: number;
+  teacher_id: number;
+  room: string;
+  weekdays: string;
+  start_time: string;
+  end_time: string;
+  max_capacity: number;
+  current_count: number;
+  level: string;
+  unit: string;
+  is_active: number;
+  teacher_name?: string;
+  course_name?: string;
+  created_at?: string | null;
+}
+
+export interface AttendanceRecord {
+  student_id: number;
+  status: string;
+  notes?: string;
+}
+
+export interface Attendance {
+  id: number;
+  class_group_id: number;
+  student_id: number;
+  student_name?: string;
+  class_group_name?: string;
+  date: string;
+  status: string;
+  notes?: string;
+}
+
+export interface Evaluation {
+  id: number;
+  student_id: number;
+  class_group_id: number;
+  student_name?: string;
+  class_group_name?: string;
+  eval_type: string;
+  title: string;
+  date?: string | null;
+  score: number;
+  max_score: number;
+  weight: number;
+  notes?: string;
+}
+
+export interface WeightConfigItem {
+  id: number;
+  class_group_id: number;
+  label: string;
+  eval_type: string;
+  weight: number;
+  max_score: number;
+}
+
+export interface Certificate {
+  id: number;
+  student_id: number;
+  student_name?: string;
+  class_group_id: number;
+  level: string;
+  course_name?: string;
+  teacher_name?: string;
+  media: number;
+  frequency: number;
+  workload_hours: number;
+  control_number: string;
+  issue_date?: string | null;
+}
+
+export interface BoletimEvaluation {
+  id: number;
+  eval_type: string;
+  title: string;
+  date?: string | null;
+  score: number;
+  max_score: number;
+  weight: number;
+}
+
+export interface BoletimCertificate {
+  control_number: string;
+  issue_date?: string | null;
+  level: string;
+  course_name?: string;
+  teacher_name?: string;
+  media: number;
+  frequency: number;
+  workload_hours: number;
+}
+
+export interface BoletimClass {
+  class_group_id: number;
+  class_name: string;
+  course_name?: string;
+  teacher_name?: string;
+  level?: string;
+  weekdays: string;
+  start_time: string;
+  end_time: string;
+  workload_hours: number;
+  evaluations: BoletimEvaluation[];
+  average: number;
+  status_by_grade: string;
+  present: number;
+  absent: number;
+  frequency: number;
+  situation: string;
+  eligible: boolean;
+  certificate?: BoletimCertificate | null;
+}
+
+export interface Boletim {
+  student: { id: number; full_name: string; english_level?: string; status?: string };
+  classes: BoletimClass[];
+  overall_average: number;
+}
