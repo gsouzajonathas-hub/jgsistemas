@@ -12,6 +12,10 @@ from .settings import SchoolSettings
 from .file_upload import FileUpload
 from .audit_log import AuditLog
 from .materials import TeachingMaterial, MaterialSale
+from .attendance import Attendance
+from .evaluation import Evaluation
+from .certificate import Certificate
+from .weight_config import GradeWeightConfig
 
 __all__ = [
     "User", "School", "Student", "Responsible", "Teacher", "Course",
@@ -19,4 +23,5 @@ __all__ = [
     "FinancialPlan", "Carne", "Installment", "Discount", "Payment", "FinancialContract",
     "CalendarEvent", "CommunicationLog", "SchoolSettings",
     "FileUpload", "AuditLog", "TeachingMaterial", "MaterialSale",
+    "Attendance", "Evaluation", "Certificate", "GradeWeightConfig",
 ]

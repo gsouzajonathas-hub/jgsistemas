@@ -37,6 +37,8 @@ class Student(Base):
     responsible = relationship("Responsible", back_populates="student", uselist=False, cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="student", cascade="all, delete-orphan")
     files = relationship("FileUpload", back_populates="student", cascade="all, delete-orphan")
+    attendances = relationship("Attendance", back_populates="student")
+    evaluations = relationship("Evaluation", back_populates="student")
 
 
 class Responsible(Base):

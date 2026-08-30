@@ -26,3 +26,4 @@ class ClassGroup(Base):
     course = relationship("Course", back_populates="classes")
     teacher = relationship("Teacher", back_populates="classes")
     enrollments = relationship("Enrollment", back_populates="class_group")
+    attendances = relationship("Attendance", back_populates="class_group")
