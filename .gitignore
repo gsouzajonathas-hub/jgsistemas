@@ -27,6 +27,9 @@ uploads/
 .ruff_cache/
 .coverage
 
+# Ferramentas de automação
+.playwright-mcp/
+
 # Sistema operacional
 .DS_Store
 Thumbs.db
