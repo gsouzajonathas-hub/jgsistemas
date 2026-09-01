@@ -7,11 +7,21 @@ services:
     region: oregon
     healthCheckPath: /api/health
     autoDeploy: true
+    # Disco persistente para uploads (fotos/PDFs de alunos) e logo.
+    # Sem ele, os arquivos gravados em /data/uploads se perdem a cada deploy.
+    disk:
+      name: jgsistemas-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
+      # Banco de dados: Supabase Postgres (definir o valor no painel da Render).
+      # Ex.: postgresql://postgres.<ref>:<senha>@aws-0-<regiao>.pooler.supabase.com:6543/postgres
       - key: DATABASE_URL
         sync: false
+      # Chave do JWT - OBRIGATORIA (backend recusa iniciar com o padrao).
+      # Gere em: python -c "import secrets; print(secrets.token_urlsafe(48))"
       - key: SECRET_KEY
-        generateValue: true
+        sync: false
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"
       - key: CORS_ORIGINS
@@ -20,7 +30,15 @@ services:
         value: https://jgsistemas.vercel.app
       - key: ENVIRONMENT
         value: production
-      - key: SUPABASE_URL
+      # Diretorios de dados apontam para o disco persistente montado em /data
+      - key: DATA_DIR
+        value: /data
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      # Email transacional via Resend (reset de senha em producao).
+      # API key em: https://resend.com/api-keys
+      - key: RESEND_API_KEY
         sync: false
-      - key: SUPABASE_ANON_KEY
+      # Remetente (dominio verificado no Resend). Ex.: no-reply@seudominio.com
+      - key: RESEND_FROM
         sync: false

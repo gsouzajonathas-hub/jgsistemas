@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI } from '../services/api';
-import { supabase, isSupabaseConfigured } from '../services/supabase';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -44,22 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
   };
-
-  // Sincroniza sessão Supabase (ex.: retorno do login com Google)
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
-    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session?.access_token) return;
-      if (localStorage.getItem('token')) return;
-      try {
-        const res = await authAPI.supabaseSync(session.access_token);
-        applySession(res.data.access_token, res.data.user);
-      } catch {
-        // sincronização falhou; usuário pode tentar novamente
-      }
-    });
-    return () => data.subscription.unsubscribe();
-  }, []);
 
   const logout = () => {
     localStorage.removeItem('token');

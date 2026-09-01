@@ -5,7 +5,7 @@ vi.mock('./services/api', () => {
   const g = () => vi.fn(() => Promise.resolve({ data: [] }));
   const go = () => vi.fn(() => Promise.resolve({ data: {} }));
   return {
-    authAPI: { login: vi.fn(), register: vi.fn(), forgotPassword: vi.fn(), resetPassword: vi.fn(), changePassword: vi.fn(), getMe: vi.fn(), getUsers: g(), createUser: vi.fn(), updateUser: vi.fn(), deleteUser: vi.fn(), supabaseSync: vi.fn() },
+    authAPI: { login: vi.fn(), register: vi.fn(), forgotPassword: vi.fn(), resetPassword: vi.fn(), changePassword: vi.fn(), getMe: vi.fn(), getUsers: g(), createUser: vi.fn(), updateUser: vi.fn(), deleteUser: vi.fn() },
     studentsAPI: { list: g(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), uploadFile: vi.fn(), getFiles: vi.fn(), downloadFile: vi.fn(), deleteFile: vi.fn(), carnePDF: vi.fn() },
     auditAPI: { list: g() },
     coursesAPI: { list: g() },
