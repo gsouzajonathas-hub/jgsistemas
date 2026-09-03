@@ -206,12 +206,25 @@ async def health():
 
 _INDEX_HTML = os.path.join(FRONTEND_DIR, "index.html")
 
+# O backend é servido como API-only (frontend publicado na Vercel). O build SPA
+# (frontend_dist/) NÃO é versionado no git, então não existe na imagem do Render.
+# Quando presente (dev local), serve o SPA; quando ausente, responde 404 limpo.
+_FRONTEND_AVAILABLE = os.path.isfile(_INDEX_HTML)
+
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     if full_path.startswith("api/"):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Rota não encontrada")
+    if not _FRONTEND_AVAILABLE:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "detail": "Backend API-only em produção. A interface é servida pela Vercel "
+                          "(https://jgsistemas.vercel.app), não por este servidor."
+            },
+        )
     file_path = os.path.join(FRONTEND_DIR, full_path)
     if full_path and os.path.isfile(file_path):
         return FileResponse(file_path)
