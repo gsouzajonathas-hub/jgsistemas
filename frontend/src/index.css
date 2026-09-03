@@ -117,9 +117,375 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+/* =========================================================================
+   Landing page — scroll reveal (estilo Typebot: "emerge" com blur)
+   ========================================================================= */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  filter: blur(8px);
+  transition:
+    opacity 0.7s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.7s cubic-bezier(0.23, 1, 0.32, 1),
+    filter 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+  transition-delay: var(--d, 0ms);
+  will-change: opacity, transform, filter;
+}
+.reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+/* Stagger: filhos de .stagger revelam em sequência (blur + subida) */
+.stagger > .reveal-item {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(6px);
+  transition:
+    opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    filter 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.stagger.is-revealed > .reveal-item {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+.stagger.is-revealed > .reveal-item:nth-child(1) { transition-delay: 30ms; }
+.stagger.is-revealed > .reveal-item:nth-child(2) { transition-delay: 90ms; }
+.stagger.is-revealed > .reveal-item:nth-child(3) { transition-delay: 150ms; }
+.stagger.is-revealed > .reveal-item:nth-child(4) { transition-delay: 210ms; }
+.stagger.is-revealed > .reveal-item:nth-child(5) { transition-delay: 270ms; }
+.stagger.is-revealed > .reveal-item:nth-child(6) { transition-delay: 330ms; }
+
+/* Cards com reveal atrasado (indexado por --d via inline style) */
+.reveal-delay {
+  transition-delay: var(--d, 0ms);
+}
+
+/* =========================================================================
+   Landing page — orbs de fundo animados (flutuação por transform, GPU)
+   ========================================================================= */
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero-orb-a {
+  width: 28rem;
+  height: 28rem;
+  top: -128px;
+  right: -128px;
+  background: radial-gradient(circle at 60% 40%, rgb(99 102 241 / 0.5), transparent 65%);
+  animation: orb-float 22s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+.hero-orb-b {
+  width: 30rem;
+  height: 30rem;
+  bottom: -160px;
+  left: -96px;
+  background: radial-gradient(circle at 50% 50%, rgb(139 92 246 / 0.45), transparent 65%);
+  animation: orb-float 26s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate-reverse;
+}
+
+@keyframes orb-float {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(40px, 30px, 0) scale(1.08); }
+}
+
+/* =========================================================================
+   Landing page — card com spotlight que segue o cursor (--mx/--my)
+   ========================================================================= */
+.spotlight-card {
+  --mx: 50%;
+  --my: 50%;
+  position: relative;
+}
+.spotlight-card .spotlight-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    420px circle at var(--mx) var(--my),
+    rgb(99 102 241 / 0.12),
+    transparent 60%
+  );
+}
+.spotlight-card:hover .spotlight-beam {
+  opacity: 1;
+}
+
+/* Hover-lift gating: só aplica onde há mouse preciso (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .reveal { will-change: auto; }
+  .spotlight-card {
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
 }
+
+/* Reduced motion: mantém conteúdo legível, remove movimento pesado */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-item {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  .orb,
+  .hero-orb-a,
+  .hero-orb-b {
+    animation: none !important;
+  }
+}
+
+/* =========================================================================
+   Landing v2 — hero com vídeo + neon roxo
+   ========================================================================= */
+
+/* Torna o stagger revelável a partir do reveal do PAI (hero) */
+.reveal.is-revealed .stagger > .reveal-item,
+.stagger.is-revealed > .reveal-item {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+.reveal.is-revealed .stagger > .reveal-item:nth-child(1),
+.stagger.is-revealed > .reveal-item:nth-child(1) { transition-delay: 30ms; }
+.reveal.is-revealed .stagger > .reveal-item:nth-child(2),
+.stagger.is-revealed > .reveal-item:nth-child(2) { transition-delay: 90ms; }
+.reveal.is-revealed .stagger > .reveal-item:nth-child(3),
+.stagger.is-revealed > .reveal-item:nth-child(3) { transition-delay: 150ms; }
+.reveal.is-revealed .stagger > .reveal-item:nth-child(4),
+.stagger.is-revealed > .reveal-item:nth-child(4) { transition-delay: 210ms; }
+.reveal.is-revealed .stagger > .reveal-item:nth-child(5),
+.stagger.is-revealed > .reveal-item:nth-child(5) { transition-delay: 270ms; }
+.reveal.is-revealed .stagger > .reveal-item:nth-child(6),
+.stagger.is-revealed > .reveal-item:nth-child(6) { transition-delay: 330ms; }
+
+/* Vinheta sutil sobre o vídeo do hero */
+.hero-vignette {
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(10 6 24 / 0.55) 100%);
+}
+
+/* Elementos flutuantes em parallax (movem em velocidades diferentes no scroll) */
+.parallax-float {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform;
+}
+.float-doc-1 {
+  top: 24%;
+  left: 4%;
+  animation: float-y 7s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+.float-doc-2 {
+  top: 62%;
+  right: 5%;
+  animation: float-y 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate-reverse;
+}
+@keyframes float-y {
+  from { transform: translate3d(0, -12px, 0) rotate(-2deg); }
+  to   { transform: translate3d(0, 12px, 0) rotate(2deg); }
+}
+
+/* Composição de prévias do produto no hero (cards sobrepostos) */
+.preview-float-1 { z-index: 3; animation: float-y 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+.preview-float-2 { z-index: 4; animation: float-y 7s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate-reverse; }
+.preview-float-3 { z-index: 5; animation: float-y 11s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+.preview-float-2,
+.preview-float-3 {
+  transform: translateZ(0);
+}
+
+/* Card com tilt 3D (controlado por --rx/--ry via JS no mousemove) */
+.tilt-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateZ(0);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tilt-card {
+    transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+}
+
+/* Flip-box 3D (frente = ícone+título, verso = descrição) */
+.flip-card {
+  perspective: 1200px;
+  position: relative;
+  min-height: 10.5rem;
+}
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 10.5rem;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .flip-card:hover .flip-inner,
+  .flip-card:focus-within .flip-inner {
+    transform: rotateY(180deg);
+  }
+}
+.flip-card.flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* Cursores de digitação (typewriter) */
+.type-caret {
+  display: inline-block;
+  width: 3px;
+  height: 0.9em;
+  margin-left: 6px;
+  vertical-align: baseline;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #a78bfa, #e879f9);
+  box-shadow: 0 0 12px rgb(232 121 249 / 0.8);
+}
+.type-caret.blinking {
+  animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Sombras/brilho neon */
+.shadow-glow {
+  box-shadow: 0 0 0 1px rgb(139 92 246 / 0.25), 0 8px 24px -6px rgb(168 85 247 / 0.45);
+}
+.shadow-glow-grad {
+  box-shadow: 0 4px 20px -4px rgb(168 85 247 / 0.5), 0 0 32px -8px rgb(217 70 239 / 0.4);
+}
+
+/* Gradiente neon em textos (mais vibrante no hero sobre vídeo) */
+.hero .gradient-text,
+.hero .hover\:gradient-text {
+  background-image: linear-gradient(100deg, #a78bfa 0%, #c084fc 30%, #f0abfc 55%, #e879f9 80%, #a78bfa 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Painéis de aba (transição via transform/opacity) */
+.tab-panel {
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+}
+.tab-panel-active {
+  display: block;
+  animation: tab-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes tab-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* CTA flutuante (aparece ao rolar, some ao topo) */
+.floating-cta {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(24px) scale(0.92);
+  pointer-events: none;
+  transition:
+    opacity 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.floating-cta-show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.floating-cta .floating-cta-label {
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(139 92 246 / 0.25);
+  color: #1e1b4b;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px -8px rgb(168 85 247 / 0.45);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.floating-cta:hover .floating-cta-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+.dark .floating-cta .floating-cta-label {
+  background: rgba(17, 26, 46, 0.85);
+  color: #eef2ff;
+  border: 1px solid rgb(139 92 246 / 0.35);
+}
+
+/* Reduced motion aplicado aos novos efeitos */
+@media (prefers-reduced-motion: reduce) {
+  .parallax-float,
+  .float-doc-1,
+  .float-doc-2 {
+    animation: none !important;
+  }
+  .type-caret {
+    animation: none !important;
+  }
+  .tab-panel-active {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  /* Flip-box: mostra frente + verso empilhados, sem animação */
+  .flip-inner {
+    transform: none !important;
+    transition: none;
+    transform-style: flat;
+    min-height: 0;
+  }
+  .flip-card {
+    min-height: 0;
+  }
+  .flip-face {
+    position: static;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+  .flip-back {
+    transform: none;
+    margin-top: 0.5rem;
+  }
+}
+
