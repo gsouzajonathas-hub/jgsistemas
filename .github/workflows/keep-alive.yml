@@ -1,0 +1,27 @@
+name: Keep Alive - Render
+
+# Mantém o backend do Render (plano free) acordado.
+# O Render free faz spin-down após ~15 min sem tráfego; o primeiro request
+# depois disso demora 30-60s e estoura o timeout do frontend. Este workflow
+# faz um ping periódico no /api/health (público), evitando o sleep.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping backend health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar /api/health
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 40 \
+            "https://jgsistemas-backend.onrender.com/api/health")
+          echo "HTTP $code"
+          # Se o health não responder 200, o job falha (visível nas Actions)
+          if [ "$code" != "200" ]; then
+            echo "::error::Backend respondeu HTTP $code"
+            exit 1
+          fi
