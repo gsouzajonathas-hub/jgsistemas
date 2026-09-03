@@ -13,7 +13,7 @@ from app.routes import (
     auth, students, enrollments,
     financial, carnes, schedule, communication,
     reports, search, settings, students_profile, materials,
-    courses, audit, leads,
+    courses, audit, leads, backup,
     teachers, classes, attendance, evaluations, boletins, certificates, weight_config,
 )
 import os
@@ -194,6 +194,7 @@ app.include_router(settings.router, prefix="/api/settings", tags=["Configuraçõ
 app.include_router(students_profile.router, prefix="/api/student-profile", tags=["Perfil do Aluno"])
 app.include_router(materials.router, prefix="/api/materials", tags=["Materiais Didáticos"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Auditoria"])
+app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
 app.include_router(communication.router, prefix="/api/communication", tags=["Comunicação"])
 app.include_router(teachers.router, prefix="/api/teachers", tags=["Professores"])
 app.include_router(classes.router, prefix="/api/classes", tags=["Turmas"])

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel
@@ -176,3 +177,38 @@ async def delete_material(material_id: int, current_user=Depends(require_role("a
     await db.delete(material)
     await db.commit()
     return {"message": "Material excluído com sucesso"}
+
+
+@router.get("/sales/{sale_id}/receipt")
+async def material_receipt(sale_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(MaterialSale).where(MaterialSale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+
+    from app.models.student import Student
+    from app.models.settings import SchoolSettings
+
+    material_r = await db.execute(select(TeachingMaterial).where(TeachingMaterial.id == sale.material_id))
+    material = material_r.scalar_one_or_none()
+    if not material:
+        raise HTTPException(status_code=404, detail="Material não encontrado")
+
+    student_r = await db.execute(select(Student).where(Student.id == sale.student_id))
+    student = student_r.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+
+    settings_r = await db.execute(select(SchoolSettings).limit(1))
+    settings = settings_r.scalar_one_or_none()
+
+    from app.services.material_receipt_service import build_material_receipt_pdf
+    pdf_bytes = build_material_receipt_pdf(sale, material, student, settings)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="recibo-material-{sale.id}.pdf"'
+        }
+    )

@@ -65,6 +65,9 @@ export const auditAPI = {
 
 export const coursesAPI = {
   list: (params?: { skip?: number; limit?: number }) => api.get('/courses', { params }),
+  create: (data: { name: string; level?: string; description?: string; duration_hours?: number; price?: number }) => api.post('/courses', data),
+  update: (id: number, data: { name: string; level?: string; description?: string; duration_hours?: number; price?: number }) => api.put(`/courses/${id}`, data),
+  delete: (id: number) => api.delete(`/courses/${id}`),
 };
 
 export const plansAPI = {
@@ -151,6 +154,7 @@ export const materialsAPI = {
   delete: (id: number) => api.delete(`/materials/${id}`),
   listSales: (params?: { student_id?: number; material_id?: number; skip?: number; limit?: number }) => api.get('/materials/sales', { params }),
   createSale: (data: { material_id: number; student_id: number; quantity?: number; unit_price?: number; payment_method?: string; notes?: string }) => api.post('/materials/sales', data),
+  receipt: (saleId: number) => api.get(`/materials/sales/${saleId}/receipt`, { responseType: 'blob' }),
   dashboard: () => api.get('/materials/dashboard'),
 };
 
@@ -188,6 +192,10 @@ export const studentProfileAPI = {
 
 export const teachersAPI = {
   list: () => api.get<Teacher[]>('/teachers'),
+  listAll: () => api.get<Teacher[]>('/teachers/all'),
+  create: (data: { full_name: string; cpf?: string; phone?: string; whatsapp?: string; email?: string; specialization?: string; hourly_rate?: number; is_active?: boolean; notes?: string }) => api.post('/teachers', data),
+  update: (id: number, data: { full_name: string; cpf?: string; phone?: string; whatsapp?: string; email?: string; specialization?: string; hourly_rate?: number; is_active?: boolean; notes?: string }) => api.put(`/teachers/${id}`, data),
+  delete: (id: number) => api.delete(`/teachers/${id}`),
 };
 
 export const classesAPI = {
@@ -234,6 +242,10 @@ export const certificatesAPI = {
   student: (studentId: number) => api.get<Certificate[]>(`/certificates/student/${studentId}`),
   issue: (data: { student_id: number; class_group_id: number; level?: string }) => api.post('/certificates', data),
   pdf: (id: number) => api.get(`/certificates/${id}/pdf`, { responseType: 'blob' }),
+};
+
+export const backupAPI = {
+  export: () => api.get('/backup/export', { responseType: 'blob' }),
 };
 
 export default api;

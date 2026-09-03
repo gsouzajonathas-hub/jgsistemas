@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { settingsAPI, authAPI } from '../services/api';
+import { settingsAPI, authAPI, backupAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { pushSettingsCache } from '../hooks/useSettings';
-import { Save, Upload, Building, Palette, Users, Plus, X } from 'lucide-react';
+import { Save, Upload, Building, Palette, Users, Plus, X, Download } from 'lucide-react';
 
 const PAYMENT_METHOD_OPTIONS = ['PIX', 'Dinheiro', 'Débito', 'Crédito', 'Cartão', 'Transferência'];
 
@@ -61,20 +61,45 @@ export default function Settings() {
       pushSettingsCache(settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch { alert('Erro ao salvar'); } finally { setSaving(false); }
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao salvar as configurações. Tente novamente.');
+    } finally { setSaving(false); }
   };
 
   const handleLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const { data } = await settingsAPI.uploadLogo(file);
-    setSettings((s: any) => ({ ...s, logo_url: data.logo_url }));
+    try {
+      const { data } = await settingsAPI.uploadLogo(file);
+      setSettings((s: any) => ({ ...s, logo_url: data.logo_url }));
+      pushSettingsCache({ ...settings, logo_url: data.logo_url });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao enviar o logo. Tente novamente.');
+    }
   };
 
   const handleDeleteUser = async (id: number) => {
     if (!confirm('Excluir este usuário?')) return;
     await authAPI.deleteUser(id);
     setUsers(u => u.filter(user => user.id !== id));
+  };
+
+  const handleBackup = async () => {
+    try {
+      const { data } = await backupAPI.export();
+      const url = window.URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-painel-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao gerar o backup. Tente novamente.');
+    }
   };
 
   const openCreateModal = () => {
@@ -268,10 +293,18 @@ export default function Settings() {
         <div className="card-surface overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/10">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{users.length} usuário(s)</span>
-            <button onClick={openCreateModal}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Novo Usuário
-            </button>
+            <div className="flex items-center gap-2">
+              {user?.role === 'admin' && (
+                <button onClick={handleBackup}
+                  className="px-3 py-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-white/5">
+                  <Download className="w-4 h-4" /> Backup do Banco
+                </button>
+              )}
+              <button onClick={openCreateModal}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Novo Usuário
+              </button>
+            </div>
           </div>
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-white/5">

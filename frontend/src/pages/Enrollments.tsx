@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { enrollmentsAPI, studentsAPI } from '../services/api';
+import { enrollmentsAPI, studentsAPI, classesAPI } from '../services/api';
 import type { Enrollment } from '../types';
 import { Plus, RefreshCw, XCircle, Pause, ArrowRightLeft } from 'lucide-react';
 import { formatDate } from '../utils/format';
@@ -96,23 +96,34 @@ export default function Enrollments() {
 
 function EnrollmentModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [students, setStudents] = useState<any[]>([]);
-  const [form, setForm] = useState({ student_id: 0, class_group_id: 1, enrollment_date: new Date().toISOString().split('T')[0], notes: '' });
+  const [classes, setClasses] = useState<any[]>([]);
+  const [form, setForm] = useState({ student_id: 0, class_group_id: 0, enrollment_date: new Date().toISOString().split('T')[0], notes: '' });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     studentsAPI.list({ limit: 100 }).then(({ data }) => setStudents(data.students || []));
+    classesAPI.list({ limit: 200 }).then(({ data }) => setClasses(data || [])).catch(() => setClasses([]));
   }, []);
 
   const handleSave = async () => {
-    if (!form.student_id) { alert('Selecione o aluno'); return; }
+    if (!form.student_id) { setError('Selecione o aluno'); return; }
+    if (!form.class_group_id) { setError('Selecione a turma'); return; }
     setSaving(true);
-    try { await enrollmentsAPI.create(form); onSaved(); } catch { alert('Erro ao matricular'); } finally { setSaving(false); }
+    setError('');
+    try {
+      await enrollmentsAPI.create({ ...form, class_group_id: Number(form.class_group_id) });
+      onSaved();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao matricular. Verifique os dados e tente novamente.');
+    } finally { setSaving(false); }
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-[#111a2e] rounded-2xl w-full max-w-md p-6">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Nova Matrícula</h2>
+        {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm mb-4">{error}</div>}
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Aluno *</label>
@@ -120,6 +131,14 @@ function EnrollmentModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               className="w-full px-4 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm">
               <option value={0}>Selecione o aluno</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Turma *</label>
+            <select value={form.class_group_id} onChange={e => setForm(f => ({ ...f, class_group_id: parseInt(e.target.value) }))}
+              className="w-full px-4 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm">
+              <option value={0}>Selecione a turma</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.current_count}/{c.max_capacity})</option>)}
             </select>
           </div>
           <div>

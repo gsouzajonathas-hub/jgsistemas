@@ -27,7 +27,9 @@ if SECRET_KEY in DEFAULT_SECRET_KEYS:
     )
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+# Padrão: 8h (480 min) para reduzir quedas de sessão em uso real.
+# Pode ser sobrescrito via variável de ambiente ACCESS_TOKEN_EXPIRE_MINUTES.
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
 security = HTTPBearer()
 

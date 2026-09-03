@@ -18,9 +18,14 @@ export default function Classes() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
-    await classesAPI.delete(id);
-    setDeleteConfirm(null);
-    load();
+    try {
+      await classesAPI.delete(id);
+      setDeleteConfirm(null);
+      load();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao excluir a turma.');
+      setDeleteConfirm(null);
+    }
   };
 
   const weekdayColors: Record<string, string> = {
@@ -131,6 +136,7 @@ function ClassModal({ classGroup, onClose, onSaved }: { classGroup: ClassGroup |
   };
 
   const handleSave = async () => {
+    if (!form.name || !form.course_id || !form.teacher_id) { alert('Preencha nome, curso e professor.'); return; }
     setSaving(true);
     try {
       if (classGroup) {
@@ -139,7 +145,9 @@ function ClassModal({ classGroup, onClose, onSaved }: { classGroup: ClassGroup |
         await classesAPI.create(form);
       }
       onSaved();
-    } catch { alert('Erro ao salvar'); } finally { setSaving(false); }
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao salvar a turma.');
+    } finally { setSaving(false); }
   };
 
   return (
