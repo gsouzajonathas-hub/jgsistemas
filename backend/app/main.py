@@ -13,7 +13,7 @@ from app.routes import (
     auth, students, enrollments,
     financial, carnes, schedule, communication,
     reports, search, settings, students_profile, materials,
-    courses, audit,
+    courses, audit, leads,
     teachers, classes, attendance, evaluations, boletins, certificates, weight_config,
 )
 import os
@@ -197,6 +197,7 @@ app.include_router(evaluations.router, prefix="/api/evaluations", tags=["Avalia�
 app.include_router(boletins.router, prefix="/api/boletins", tags=["Boletins"])
 app.include_router(certificates.router, prefix="/api/certificates", tags=["Certificados"])
 app.include_router(weight_config.router, prefix="/api/weight-config", tags=["Pesos de Avaliação"])
+app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
 
 
 @app.get("/api/health")

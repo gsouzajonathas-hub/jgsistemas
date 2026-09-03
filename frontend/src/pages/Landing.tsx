@@ -8,6 +8,7 @@ import {
   IconSparkles, IconDashboard, IconUsers, IconUserPlus,
   IconDollar, IconCalendar, IconSettings, IconCreditCard, IconFileText,
   IconCheckCircle, IconZap, IconNotebook, IconAward, IconArrowRight,
+  IconClipboardList, IconTicket, IconFileSignature, IconMessageCircle,
 } from '../components/brand-icons';
 
 /* =========================================================================
@@ -161,7 +162,7 @@ function useMagnetic<T extends HTMLElement = HTMLButtonElement>(strength = 0.3) 
    ========================================================================= */
 
 /** Card de módulo com reveal + spotlight + tilt 3D no hover. */
-function ModuleCard({ icon: Icon, title, desc, delay, featured }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; delay: number; featured?: boolean }) {
+function ModuleCard({ icon: Icon, title, desc, color, delay, featured }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color?: string; delay: number; featured?: boolean }) {
   const ref = useReveal<HTMLDivElement>();
   const { ref: spotRef, onMove } = useSpotlight();
 
@@ -212,7 +213,7 @@ function ModuleCard({ icon: Icon, title, desc, delay, featured }: { icon: React.
         <div className="flip-inner">
           {/* Frente: ícone + título */}
           <div className="flip-face flip-front">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-primary-600/25 ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-primary-500/40 transition-all duration-200">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color || 'from-primary-500 via-violet-500 to-fuchsia-500'} flex items-center justify-center shadow-lg shadow-primary-600/25 ring-1 ring-white/20 group-hover:scale-110 group-hover:shadow-primary-500/40 transition-all duration-200`}>
               <Icon className="w-6 h-6 text-white" />
             </div>
             <h3 className="mt-4 font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -257,6 +258,164 @@ function StepItem({ number, title, desc, delay }: { number: number; title: strin
       <h3 className="mt-5 font-semibold text-slate-900 dark:text-white">{title}</h3>
       <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">{desc}</p>
     </div>
+  );
+}
+
+/* =========================================================================
+   Formulário de contato / captura de leads
+   ========================================================================= */
+
+/** Formulário de contato que envia o lead para o backend (POST /api/leads). */
+function ContactSection() {
+  const ref = useReveal<HTMLDivElement>();
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [error, setError] = useState('');
+
+  const update = (k: keyof typeof form) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setError('');
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone || null,
+          message: form.message,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = Array.isArray(data?.detail) ? data.detail.map((d: any) => d.msg).join(' ') : data?.detail;
+        throw new Error(detail || 'Não foi possível enviar. Tente novamente.');
+      }
+      setStatus('success');
+      setForm({ name: '', email: '', phone: '', message: '' });
+    } catch (err) {
+      setStatus('error');
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar. Tente novamente.');
+    }
+  };
+
+  const inputCls =
+    'w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-white/10 bg-white/80 dark:bg-white/5 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition';
+
+  return (
+    <section id="contato" className="scroll-mt-20 py-20 sm:py-28 border-t border-slate-200/80 dark:border-white/5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={ref} className="reveal grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          {/* Texto */}
+          <div>
+            <p className="text-sm font-semibold text-primary-600 dark:text-primary-400">Fale conosco</p>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
+              Vamos começar? <span className="gradient-text">Solicite uma demonstração.</span>
+            </h2>
+            <p className="mt-4 text-slate-600 dark:text-slate-400 leading-relaxed">
+              Conte um pouco sobre a sua escola e nossa equipe entrará em contato para apresentar o
+              sistema, alinhar as necessidades e criar o melhor plano para vocês.
+            </p>
+            <ul className="mt-8 space-y-4">
+              {[
+                { icon: IconMessageCircle, t: 'Atendimento personalizado', d: 'Fale com nossa equipe direto pelo WhatsApp ou e-mail.' },
+                { icon: IconZap, t: 'Resposta rápida', d: 'Retornamos em até 1 dia útil com tudo o que você precisa.' },
+                { icon: IconShield, t: 'Sem compromisso', d: 'Demonstração gratuita, sem taxas de adesão e sem fidelidade.' },
+              ].map((b) => {
+                const Icon = b.icon;
+                return (
+                  <li key={b.t} className="flex gap-4">
+                    <div className="w-11 h-11 flex-none rounded-xl bg-gradient-to-br from-primary-500/15 to-fuchsia-500/15 border border-primary-400/20 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 dark:text-white">{b.t}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{b.d}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Formulário */}
+          <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#131c31] shadow-2xl shadow-indigo-900/15 p-6 sm:p-8">
+            {status === 'success' ? (
+              <div className="text-center py-10">
+                <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                  <IconCheckCircle className="w-8 h-8 text-emerald-500" />
+                </div>
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">Recebemos seu contato!</h3>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Em breve nossa equipe falará com você. Obrigado pelo interesse.
+                </p>
+                <button
+                  onClick={() => setStatus('idle')}
+                  className="mt-6 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+                >
+                  Enviar outra mensagem
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <div>
+                  <label htmlFor="lead-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome*</label>
+                  <input id="lead-name" type="text" required value={form.name} onChange={update('name')}
+                    placeholder="Seu nome completo" className={inputCls} />
+                </div>
+                <div>
+                  <label htmlFor="lead-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail*</label>
+                  <input id="lead-email" type="email" required value={form.email} onChange={update('email')}
+                    placeholder="voce@escola.com" className={inputCls} />
+                </div>
+                <div>
+                  <label htmlFor="lead-phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefone / WhatsApp</label>
+                  <input id="lead-phone" type="tel" value={form.phone} onChange={update('phone')}
+                    placeholder="(00) 00000-0000" className={inputCls} />
+                </div>
+                <div>
+                  <label htmlFor="lead-message" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mensagem*</label>
+                  <textarea id="lead-message" required value={form.message} onChange={update('message')} rows={4}
+                    placeholder="Conte sobre a sua escola e o que você precisa..." className={inputCls} />
+                </div>
+
+                {status === 'error' && (
+                  <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="w-full btn-base bg-gradient-to-r from-primary-600 via-violet-600 to-fuchsia-600 hover:from-primary-700 hover:via-violet-700 hover:to-fuchsia-700 text-white font-semibold px-6 py-3.5 rounded-xl shadow-glow-grad disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 transition-transform duration-300 ease-out"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white/40 border-t-white" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <IconMessageCircle className="w-4 h-4" />
+                      Enviar mensagem
+                    </>
+                  )}
+                </button>
+                <p className="text-center text-xs text-slate-400 dark:text-slate-500">
+                  Ao enviar, você aceita ser contatado pela nossa equipe comercial.
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -373,7 +532,7 @@ function ModulesPreview() {
         ))}
       </div>
       <div className="mt-2 rounded-lg bg-gradient-to-r from-primary-500/10 to-fuchsia-500/10 border border-primary-400/20 px-2 py-1.5 text-center text-[9px] font-semibold text-primary-600 dark:text-primary-400">
-        9 módulos · tudo em um só lugar
+        16 módulos · tudo em um só lugar
       </div>
     </div>
   );
@@ -384,15 +543,22 @@ function ModulesPreview() {
    ========================================================================= */
 
 const modules = [
-  { icon: IconDashboard, title: 'Dashboard', desc: 'Visão geral com indicadores, gráficos e alertas do dia.' },
-  { icon: IconUsers, title: 'Alunos', desc: 'Cadastro completo com documentos, fotos e histórico.' },
-  { icon: IconUserPlus, title: 'Matrículas', desc: 'Matrículas com renovação, trancamento e cancelamento.' },
-  { icon: IconDollar, title: 'Financeiro', desc: 'Controle de mensalidades, pagamentos e inadimplência.' },
-  { icon: IconCreditCard, title: 'Mensalidades', desc: 'Gestão de mensalidades por aluno com vencimento e status.' },
-  { icon: IconFileText, title: 'Carnês', desc: 'Geração de carnês de pagamento com impressão.' },
-  { icon: IconCalendar, title: 'Agenda', desc: 'Calendário de eventos e aulas da escola.' },
-  { icon: IconChart, title: 'Relatórios', desc: 'Exportação de relatórios em PDF e Excel.' },
-  { icon: IconSettings, title: 'Configurações', desc: 'Logo, cores, usuários e permissões.' },
+  { icon: IconDashboard, title: 'Dashboard', color: 'from-indigo-500 to-violet-500', desc: 'Visão geral com indicadores, gráficos, receita e alertas do dia — matrículas, inadimplência e aniversariantes.' },
+  { icon: IconUsers, title: 'Alunos', color: 'from-sky-500 to-blue-500', desc: 'Cadastro completo com fotos, responsáveis, documentos, status (ativo, inativo, transferido) e histórico por aluno.' },
+  { icon: IconUserPlus, title: 'Matrículas', color: 'from-emerald-500 to-teal-500', desc: 'Renovação, trancamento, transferência e cancelamento de matrículas em poucos cliques.' },
+  { icon: IconNotebook, title: 'Turmas', color: 'from-violet-500 to-purple-500', desc: 'Turmas por curso e professor, com os dias e horários de cada aula da semana.' },
+  { icon: IconCheckCircle, title: 'Frequência', color: 'from-amber-500 to-orange-500', desc: 'Chamada por turma e data com presença, falta, atraso e falta justificada.' },
+  { icon: IconAward, title: 'Avaliações', color: 'from-fuchsia-500 to-pink-500', desc: 'Provas, trabalhos e habilidades (speaking, listening, leitura e escrita) organizados por turma.' },
+  { icon: IconClipboardList, title: 'Boletins', color: 'from-rose-500 to-red-500', desc: 'Boletins por aluno ou por turma com situação (aprovado/recuperação) e exportação em PDF/planilha.' },
+  { icon: IconGraduation, title: 'Certificados', color: 'from-primary-500 to-indigo-500', desc: 'Emissão de certificados por aluno e turma, com elegibilidade automática por aproveitamento.' },
+  { icon: IconDollar, title: 'Financeiro', color: 'from-emerald-500 to-green-600', desc: 'Mensalidades, recebimentos, inadimplência, contratos e planos com recibo em PDF.' },
+  { icon: IconCreditCard, title: 'Mensalidades', color: 'from-purple-500 to-indigo-500', desc: 'Mensalidades por aluno com vencimento, status, geração automática e registro de pagamento.' },
+  { icon: IconTicket, title: 'Carnês', color: 'from-cyan-500 to-sky-500', desc: 'Emissão e impressão de carnês com parcelas, descontos, juros e acompanhamento do que já foi recebido.' },
+  { icon: IconFileSignature, title: 'Contratos', color: 'from-slate-500 to-slate-700', desc: 'Geração de contratos de matrícula em PDF, com acompanhamento de assinatura e cancelamento.' },
+  { icon: IconFileText, title: 'Planos', color: 'from-teal-500 to-emerald-500', desc: 'Planos financeiros com duração, descontos e previsão de parcelas para calcular o valor certo de cada aluno.' },
+  { icon: IconCalendar, title: 'Agenda', color: 'from-orange-500 to-amber-500', desc: 'Calendário mensal com aulas, provas, eventos, reuniões e feriados da escola.' },
+  { icon: IconChart, title: 'Relatórios', color: 'from-green-500 to-emerald-600', desc: 'Relatórios de alunos, inadimplência, matrículas e financeiro com exportação em PDF e Excel.' },
+  { icon: IconSettings, title: 'Configurações', color: 'from-slate-600 to-slate-800', desc: 'Dados da escola, aparência e logo, usuários, papéis e permissões de acesso.' },
 ];
 
 const steps = [
@@ -409,7 +575,7 @@ const benefits = [
 ];
 
 const stats = [
-  { value: 9, suffix: '', label: 'Módulos integrados' },
+  { value: 16, suffix: '', label: 'Módulos integrados' },
   { value: 100, suffix: '%', label: 'Na nuvem' },
   { value: 24, suffix: '/7', label: 'Disponibilidade' },
 ];
@@ -420,6 +586,7 @@ const navLinks = [
   { label: 'Módulos', href: '#modulos' },
   { label: 'Benefícios', href: '#beneficios' },
   { label: 'Como funciona', href: '#como-funciona' },
+  { label: 'Contato', href: '#contato' },
 ];
 
 const passosAbas = [
@@ -451,7 +618,6 @@ export default function Landing() {
   const navigate = useNavigate();
   const [loginOpen, setLoginOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [showCta, setShowCta] = useState(false);
   const [activeTab, setActiveTab] = useState('matriculas');
 
   const heroRef = useReveal<HTMLDivElement>();
@@ -472,11 +638,25 @@ export default function Landing() {
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 12);
-      setShowCta(window.scrollY > window.innerHeight * 0.75);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // SEO dinâmico: garante título e meta description corretos em qualquer navegação SPA.
+  useEffect(() => {
+    document.title = "JG Sistemas — Sistema de Gestão Escolar | Matrículas, Financeiro e Frequência";
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute(
+      'content',
+      'Sistema de gestão escolar completo: cadastro de alunos, matrículas, turmas, frequência, avaliações, boletins, certificados, financeiro, mensalidades, carnês, contratos, agenda e relatórios. Gestão escolar online, segura e na nuvem.'
+    );
   }, []);
 
   const scrollTo = (href: string) => {
@@ -652,13 +832,13 @@ export default function Landing() {
               Um sistema, <span className="gradient-text">toda a gestão.</span>
             </h2>
             <p className="mt-3 text-slate-500 dark:text-slate-400">
-              Da matrícula ao relatório: 9 módulos integrados cobrem todas as áreas da sua escola.
+              Da matrícula ao relatório: 16 módulos integrados cobrem todas as áreas da sua escola.
             </p>
           </div>
 
           <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {modules.map((m, i) => (
-              <ModuleCard key={m.title} icon={m.icon} title={m.title} desc={m.desc} delay={i * 60} featured={i === 0} />
+              <ModuleCard key={m.title} icon={m.icon} title={m.title} desc={m.desc} color={m.color} delay={i * 60} featured={i === 0} />
             ))}
           </div>
         </div>
@@ -798,6 +978,9 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Formulário de contato / captura de leads */}
+      <ContactSection />
+
       {/* Footer — colunas estilo Lumni */}
       <footer className="py-16 border-t border-slate-200/80 dark:border-white/5 bg-white/60 dark:bg-[#0d1526]/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -866,21 +1049,6 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-
-      {/* CTA flutuante */}
-      <button
-        onClick={() => setLoginOpen(true)}
-        className={`floating-cta ${showCta ? 'floating-cta-show' : ''}`}
-        aria-label="Falar com atendimento"
-      >
-        <div className="relative">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-glow-grad">
-            <IconSparkles className="w-6 h-6 text-white" />
-          </div>
-          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-[#0b1220]" aria-hidden />
-        </div>
-        <span className="floating-cta-label">Falar com um especialista</span>
-      </button>
 
       {/* Modal de login */}
       <Modal open={loginOpen} onClose={() => setLoginOpen(false)} size="md">

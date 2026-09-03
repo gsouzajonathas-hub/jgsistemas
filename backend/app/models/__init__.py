@@ -16,6 +16,7 @@ from .attendance import Attendance
 from .evaluation import Evaluation
 from .certificate import Certificate
 from .weight_config import GradeWeightConfig
+from .lead import Lead
 
 __all__ = [
     "User", "School", "Student", "Responsible", "Teacher", "Course",
@@ -24,4 +25,5 @@ __all__ = [
     "CalendarEvent", "CommunicationLog", "SchoolSettings",
     "FileUpload", "AuditLog", "TeachingMaterial", "MaterialSale",
     "Attendance", "Evaluation", "Certificate", "GradeWeightConfig",
+    "Lead",
 ]
