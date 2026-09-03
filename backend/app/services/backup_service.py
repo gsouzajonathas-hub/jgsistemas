@@ -1,5 +1,7 @@
 import json
 from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 def _to_jsonable(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
+    if isinstance(obj, (Decimal, UUID)):
+        return str(obj)
     if isinstance(obj, bytes):
         return obj.decode("utf-8", errors="replace")
     return obj
@@ -34,5 +38,10 @@ async def export_database(db: AsyncSession) -> dict:
     return result
 
 
+def _fallback(obj):
+    # Última rede de segurança: converte qualquer objeto não serializável.
+    return str(obj)
+
+
 def build_pretty_json(data: dict) -> str:
-    return json.dumps(data, ensure_ascii=False, indent=2)
+    return json.dumps(data, ensure_ascii=False, indent=2, default=_fallback)
