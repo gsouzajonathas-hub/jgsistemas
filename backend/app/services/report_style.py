@@ -2,7 +2,7 @@ import os
 
 from reportlab.lib import colors
 
-from app.utils.paths import get_upload_path
+from app.utils import storage
 
 NAVY_900 = "#022344"
 NAVY_100 = "#DCE6F0"
@@ -21,9 +21,7 @@ def draw_report_header(c, w, h, settings, subtitle):
     x0 = 30
     logo_path = None
     if settings and getattr(settings, "logo_url", None):
-        p = get_upload_path(settings.logo_url)
-        if os.path.exists(p):
-            logo_path = p
+        logo_path = storage.download_logo(settings.logo_url)
     if logo_path:
         try:
             c.drawImage(logo_path, x0, h - band_h + 9, width=band_h - 18,

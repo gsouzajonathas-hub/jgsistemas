@@ -94,6 +94,11 @@ async def lifespan(app):
             db.add(school)
             await db.commit()
 
+    # Ativa buckets do Supabase Storage se configurado (senão, no-op de disco local)
+    from app.utils import storage
+    if storage.is_supabase_enabled():
+        await conn.run_sync(lambda _: storage.ensure_buckets())
+
     yield
 
 

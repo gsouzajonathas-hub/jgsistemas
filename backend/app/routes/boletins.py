@@ -291,9 +291,9 @@ def _school_logo(settings):
     import os
     if not (settings and settings.logo_url):
         return None
-    from app.utils.paths import get_upload_path
-    logo_path = get_upload_path(settings.logo_url)
-    if not os.path.exists(logo_path):
+    from app.utils import storage
+    logo_path = storage.download_logo(settings.logo_url)
+    if not logo_path:
         return None
     try:
         import tempfile
@@ -307,6 +307,11 @@ def _school_logo(settings):
         fd, path = tempfile.mkstemp(suffix=".png")
         with os.fdopen(fd, "wb") as f:
             f.write(buf.getvalue())
+        if os.path.exists(logo_path) and logo_path != path:
+            try:
+                os.remove(logo_path)
+            except Exception:
+                pass
         return path
     except Exception:
         return None

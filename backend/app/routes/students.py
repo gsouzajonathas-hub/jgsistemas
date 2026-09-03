@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -11,9 +11,10 @@ from app.utils.auth import get_current_user, require_role
 from app.utils.uploads import validate_and_save
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
-from app.utils.paths import get_student_files_dir, get_upload_path
+from app.utils.paths import get_upload_path
+from app.utils import storage
 from urllib.parse import quote
-import os, uuid, aiofiles
+import os, uuid
 
 router = APIRouter()
 
@@ -55,24 +56,20 @@ class StudentSchema(BaseModel):
 
 async def _save_upload(file: UploadFile, student_id: int, category: str, db: AsyncSession) -> dict:
     filename, content = await validate_and_save(file)
-    files_dir = get_student_files_dir()
-    os.makedirs(files_dir, exist_ok=True)
-    filepath = os.path.join(files_dir, filename)
-
-    async with aiofiles.open(filepath, "wb") as f:
-        await f.write(content)
+    ref = storage.save_bytes(storage.BUCKET_STUDENT_FILES, filename, content,
+                             content_type=file.content_type or "application/octet-stream")
 
     from app.models.file_upload import FileUpload
     upload = FileUpload(
         student_id=student_id,
         file_name=file.filename or filename,
         file_type=file.content_type,
-        file_path=f"private:{filename}",
+        file_path=ref,
         file_size=len(content),
         category=category
     )
     db.add(upload)
-    return {"file_name": file.filename, "file_path": f"private:{filename}"}
+    return {"file_name": file.filename, "file_path": ref}
 
 
 def _file_to_dict(f) -> dict:
@@ -85,7 +82,12 @@ def _file_to_dict(f) -> dict:
 
 
 def _resolve_file_path(f) -> str:
+    """Resolve o caminho físico local. Para refs Supabase devolve vazio
+    (o arquivo não existe em disco; deve ser lido via storage)."""
+    if f.file_path and storage.is_supabase_ref(f.file_path):
+        return ""
     if f.file_path and f.file_path.startswith("private:"):
+        from app.utils.paths import get_student_files_dir
         name = f.file_path[len("private:"):]
         return os.path.join(get_student_files_dir(), os.path.basename(name))
     return get_upload_path(f.file_path or "")
@@ -351,10 +353,27 @@ async def download_file(student_id: int, file_id: int, current_user=Depends(get_
     if not f:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     filepath = _resolve_file_path(f)
-    if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     filename = f.file_name or os.path.basename(f.file_path or "")
     safe_name = quote(filename)
+
+    is_supabase = bool(f.file_path and storage.is_supabase_ref(f.file_path))
+    if is_supabase:
+        # Leitura do Supabase Storage — entrega como resposta de download.
+        try:
+            content = storage.read_bytes(f.file_path)
+        except Exception:
+            raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+        return Response(
+            content=content,
+            media_type=f.file_type or "application/octet-stream",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{safe_name}",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     return FileResponse(
         filepath,
         media_type=f.file_type or "application/octet-stream",
@@ -373,7 +392,9 @@ async def delete_file(student_id: int, file_id: int, request: Request, current_u
     if not f:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     filepath = _resolve_file_path(f)
-    if os.path.exists(filepath):
+    if f.file_path and storage.is_supabase_ref(f.file_path):
+        storage.delete(f.file_path)
+    elif os.path.exists(filepath):
         os.remove(filepath)
     await log_audit(db, current_user, "student.file_delete", "file", file_id,
                     details=f.file_name, ip_address=client_ip(request))

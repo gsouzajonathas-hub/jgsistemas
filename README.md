@@ -106,6 +106,7 @@ Configure em um arquivo `.env` (veja `.env.example`):
 | `FRONTEND_URL` | URL pública do frontend (links de redefinição de senha) | `http://localhost:5173` |
 | `SMTP_HOST/PORT/USER/PASS/FROM` | Envio de e-mail | - |
 | `ZAPI_INSTANCE_URL` / `ZAPI_TOKEN` | WhatsApp (Z-API) | - |
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | Uploads persistentes no **Supabase Storage** (Render free não tem disco persistente). Sem essas vars, o backend usa disco local (comportamento anterior). Buckets `logos`/`uploads` (públicos) e `student-files` (privado) são criados no startup. | - |
 
 ## Módulos
 

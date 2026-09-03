@@ -8,8 +8,7 @@ from app.utils.auth import get_current_user, require_role
 from app.utils.uploads import validate_and_save, IMAGE_EXTENSIONS
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
-import aiofiles
-import os
+from app.utils import storage
 
 router = APIRouter()
 
@@ -44,7 +43,7 @@ async def _get_settings(db: AsyncSession) -> SchoolSettings:
 async def get_settings(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     s = await _get_settings(db)
     return {
-        "id": s.id, "school_name": s.school_name, "logo_url": s.logo_url,
+        "id": s.id, "school_name": s.school_name, "logo_url": storage.display_url(s.logo_url),
         "address": s.address, "phone": s.phone, "email": s.email,
         "cnpj": s.cnpj, "pix_key": s.pix_key or "", "primary_color": s.primary_color, "dark_mode": s.dark_mode,
         "due_day": s.due_day, "slogan": s.slogan or "", "social_media": s.social_media or "",
@@ -65,16 +64,13 @@ async def update_settings(data: SettingsSchema, request: Request, current_user=D
 
 @router.post("/logo")
 async def upload_logo(request: Request, file: UploadFile = File(...), current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
-    from app.utils.paths import get_upload_dir
     filename, content = await validate_and_save(file, allowed_exts=IMAGE_EXTENSIONS)
-    filepath = os.path.join(get_upload_dir(), filename)
-
-    async with aiofiles.open(filepath, "wb") as f:
-        await f.write(content)
+    ref = storage.save_bytes(storage.BUCKET_LOGOS, filename, content,
+                             content_type=file.content_type or "image/png")
 
     s = await _get_settings(db)
-    s.logo_url = f"/uploads/{filename}"
+    s.logo_url = ref
     await log_audit(db, current_user, "settings.logo_upload", "settings", s.id,
                     details=filename, ip_address=client_ip(request))
     await db.commit()
-    return {"logo_url": s.logo_url}
+    return {"logo_url": storage.display_url(s.logo_url)}

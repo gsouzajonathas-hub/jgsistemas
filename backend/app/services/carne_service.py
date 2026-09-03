@@ -1,5 +1,4 @@
 import io
-import os
 
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -9,8 +8,6 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPDF
-
-from app.utils.paths import get_upload_path
 
 MONTHS_PT = [
     "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -224,11 +221,10 @@ def _card_header(c, x, y_top, card_w, title, accent=RED_600):
 
 
 def _draw_emblem(c, settings, x, y_top, size):
+    from app.utils import storage
     logo_path = None
     if settings and getattr(settings, "logo_url", None):
-        p = get_upload_path(settings.logo_url)
-        if os.path.exists(p):
-            logo_path = p
+        logo_path = storage.download_logo(settings.logo_url)
     if logo_path:
         try:
             c.drawImage(logo_path, x, y_top - size, width=size, height=size,

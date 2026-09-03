@@ -21,7 +21,7 @@ from reportlab.platypus import (
 from reportlab.graphics.shapes import Drawing, Circle, String
 from reportlab.graphics import renderPDF
 
-from app.utils.paths import get_upload_path
+from app.utils import storage
 
 _BLUE_50 = "#EFF6FF"
 _BLUE_100 = "#DBEAFE"
@@ -110,8 +110,8 @@ def valor_por_extenso(valor: float) -> str:
 def _school_logo(settings) -> str:
     if not (settings and settings.logo_url):
         return None
-    logo_path = get_upload_path(settings.logo_url)
-    if not os.path.exists(logo_path):
+    logo_path = storage.download_logo(settings.logo_url)
+    if not logo_path:
         return None
     try:
         from PIL import Image as PILImage
@@ -123,6 +123,12 @@ def _school_logo(settings) -> str:
         fd, path = tempfile.mkstemp(suffix=".png")
         with os.fdopen(fd, "wb") as f:
             f.write(buf.getvalue())
+        # remove o download bruto (se ainda existir) para não vazar temporário
+        if os.path.exists(logo_path) and logo_path != path:
+            try:
+                os.remove(logo_path)
+            except Exception:
+                pass
         return path
     except Exception:
         return None

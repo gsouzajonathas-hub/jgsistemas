@@ -208,9 +208,9 @@ async def certificate_pdf(certificate_id: int, current_user=Depends(get_current_
 
     logo_flowable = None
     if settings and settings.logo_url:
-        from app.utils.paths import get_upload_path
-        logo_path = get_upload_path(settings.logo_url)
-        if os.path.exists(logo_path):
+        from app.utils import storage
+        logo_path = storage.download_logo(settings.logo_url)
+        if logo_path:
             try:
                 pil = PILImage.open(logo_path).convert("RGB")
                 pil.thumbnail((110, 110))
@@ -221,6 +221,12 @@ async def certificate_pdf(certificate_id: int, current_user=Depends(get_current_
                 logo_flowable.hAlign = 'CENTER'
             except Exception:
                 pass
+            finally:
+                if os.path.exists(logo_path):
+                    try:
+                        os.remove(logo_path)
+                    except Exception:
+                        pass
 
     if logo_flowable is not None:
         elements.append(logo_flowable)
