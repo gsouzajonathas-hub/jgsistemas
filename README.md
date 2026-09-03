@@ -99,6 +99,7 @@ Configure em um arquivo `.env` (veja `.env.example`):
 | `DATA_DIR` | Pasta do banco SQLite (`escola.db`) | pasta `backend/` |
 | `UPLOAD_DIR` | Pasta de uploads e logos | `backend/uploads` |
 | `DATABASE_URL` | Postgres (ex.: `postgresql://...`) ou SQLite (`sqlite:///caminho`) | SQLite local |
+| `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` | Conexão Postgres por variáveis separadas — **use** quando a senha tiver caracteres especiais (`/ ^ *`), que não cabem numa connection string URL | - |
 | `SECRET_KEY` | Chave do JWT (obrigatória; o backend não inicia com a padrão) | - |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Validade do token | `60` |
 | `CORS_ORIGINS` | Origens permitidas (separadas por vírgula) | localhost |

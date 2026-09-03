@@ -48,3 +48,4 @@ backend/frontend_dist/
 .expx/
 .mimocode/
 opencode.json
+.vercel

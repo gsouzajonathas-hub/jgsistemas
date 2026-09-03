@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.engine import URL
 from app.config import load_env  # noqa: F401  (carrega .env antes de ler variáveis)
 
 load_env()
@@ -8,30 +9,54 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 
+# Conexão por variáveis separadas (PG*): recomendada para senhas com caracteres
+# especiais (ex.: Supabase com `/ ^ *`), que quebram o parsing de uma connection
+# string `postgresql://user:senha@host/db`. O `URL.create` mantém a senha crua,
+# sem re-parse, então asyncpg a recebe literalmente via kwarg `password`.
+PG_HOST = os.getenv("PGHOST", "").strip()
+PG_PASSWORD = os.getenv("PGPASSWORD", "").strip()
+_has_pg_block = bool(PG_HOST and PG_PASSWORD)
+
 _is_postgres = DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://")
 _is_sqlite = DATABASE_URL.startswith("sqlite://")
 
-if _is_postgres:
+if _has_pg_block:
+    # Prioriza o bloco PG* (explícito e robusto para senhas especiais).
+    _pg_url = URL.create(
+        drivername="postgresql+asyncpg",
+        username=os.getenv("PGUSER", "postgres").strip(),
+        password=PG_PASSWORD,
+        host=PG_HOST,
+        port=int(os.getenv("PGPORT", "5432").strip()),
+        database=(os.getenv("PGDATABASE", "postgres").strip() or "postgres"),
+    )
+    async_url = _pg_url
+    _is_asyncpg = True
+elif _is_postgres:
     # Supabase fornece tanto `postgresql://` quanto `postgres://`; normaliza ambos.
     async_url = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     async_url = async_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    _is_asyncpg = True
 elif _is_sqlite:
     path = DATABASE_URL[len("sqlite:///"):]
     async_url = f"sqlite+aiosqlite:///{path}"
+    _is_asyncpg = False
 else:
-    # Sem DATABASE_URL externa: usa SQLite local SOMENTE em dev/testes.
+    # Sem conexão externa: usa SQLite local SOMENTE em dev/testes.
     # Em produção, cair para SQLite no filesystem efêmero (Render) significaria
     # perda de dados no redeploy — falha rápido em vez de degradar silenciosamente.
     if ENVIRONMENT == "production":
         raise RuntimeError(
-            "DATABASE_URL ausente ou inválida em produção. Configure a connection string "
-            "PostgreSQL (Supabase) no Render, ex.: postgresql://postgres.<ref>:<pass>@..."
+            "Conexão de banco ausente/inválida em produção. Configure DATABASE_URL "
+            "(Postgres) ou o bloco PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE no Render, "
+            "ex.: PGHOST=aws-0-us-west-2.pooler.supabase.com PGPORT=5432 PGUSER=postgres.<ref>"
         )
     from app.utils.paths import get_data_dir
     db_path = os.path.join(get_data_dir(), "escola.db")
     async_url = f"sqlite+aiosqlite:///{db_path}"
+    _is_asyncpg = False
 
-if "postgresql+asyncpg" in async_url:
+if _is_asyncpg:
     engine = create_async_engine(async_url, echo=False, pool_size=10, max_overflow=20, pool_recycle=3600)
 else:
     engine = create_async_engine(async_url, echo=False, connect_args={"check_same_thread": False})

@@ -50,6 +50,10 @@ painéis da Render, Supabase e Vercel); este documento diz exatamente o quê e e
    postgresql://postgres.<REF>:<SENHA>@aws-0-<regiao>.pooler.supabase.com:5432/postgres
    ```
    > O backend aceita tanto `postgres://` quanto `postgresql://`.
+   >
+   > **Senha com caracteres especiais (`/ ^ *` etc.):** não entra numa connection string URL,
+   > senão o parsing quebra e a autenticação falha. Nesse caso, configure o bloco `PG*` no Render
+   > (Etapa 2) em vez de `DATABASE_URL` — a senha é passada crua e funciona.
 
 ---
 
@@ -68,7 +72,8 @@ manualmente apontando para `backend/Dockerfile`.
 
    | Variável | Valor |
    |---|---|
-   | `DATABASE_URL` | connection string Supabase da Etapa 1 (obrigatório) |
+   | `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` | **preferido** quando a senha do Supabase tem caracteres especiais (`/ ^ *`) — a senha vai crua em `PGPASSWORD` (substitui o `DATABASE_URL`) |
+   | `DATABASE_URL` | connection string Supabase da Etapa 1 (use só se a senha for URL-safe) |
    | `SECRET_KEY` | gere: `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
    | `RESEND_API_KEY` | sua API key do Resend (painel Resend → API Keys) |
    | `RESEND_FROM` | remetente verificado, ex.: `no-reply@seudominio.com` |
