@@ -43,3 +43,8 @@ backend/frontend_dist/
 .vscode/
 *.swp
 *.swo
+# Ferramentas de orquestracao/automacao pessoal (fora do repo publico)
+.claude/
+.expx/
+.mimocode/
+opencode.json

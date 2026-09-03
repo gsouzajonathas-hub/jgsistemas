@@ -59,8 +59,9 @@ curl -X POST http://localhost:8000/api/auth/register \
 
 - **SECRET_KEY** é obrigatória e o backend **recusa iniciar** com a chave padrão. Gere uma:
   `python -c "import secrets; print(secrets.token_urlsafe(48))"`
-- **Redefinição de senha** usa link único com validade de 30 minutos (token único). Sem SMTP
-  configurado, o link é exibido no console do backend para uso local.
+- **Redefinição de senha** usa link único com validade de 30 minutos (token único). O envio
+  usa **Resend** (recomendado em produção, com `RESEND_API_KEY` + `RESEND_FROM`) e tem fallback
+  para **SMTP** (`SMTP_HOST/PORT/USER/PASS/FROM`) se o Resend não estiver configurado.
 - **Uploads** validados por extensão, MIME e conteúdo real; limite de 5 MB; bloqueio de
   arquivos executáveis/HTML.
 - **Login** com limite de tentativas por IP e respostas genéricas (sem enumeração de usuários).

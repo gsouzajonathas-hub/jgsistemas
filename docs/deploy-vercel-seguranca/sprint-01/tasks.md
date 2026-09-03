@@ -14,7 +14,7 @@ Caminhos relativos à raiz do repositório. Status inicial de toda task: `penden
 - **criterio_aceite**: `supabase status` exit 0 e toda imagem com status "running".
 - **depende_de**: —
 - **paralelizavel**: false
-- **status**: pendente
+- **status**: em_andamento
 
 ---
 

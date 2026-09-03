@@ -1,5 +1,18 @@
 # Orquestrador — deploy-vercel-seguranca
 
+> ## ⚠️ PLANO DESCONTINUADO (NÃO EXECUTAR)
+>
+> Este plano (D-01..D-14) previa **reescrever o backend como Supabase Edge Functions (Deno)**.
+> O usuário **abandonou** essa direção e escolheu a **"opção 1"** (commit `8da47cb`):
+> manter **FastAPI no Render** + Supabase Postgres + disco persistente `/data` + email
+> **Resend**, frontend na **Vercel**. O Supabase é usado **apenas como Postgres** (sem Auth,
+> sem RLS, sem Edge Functions).
+>
+> **Não execute as tasks deste plano.** O caminho de deploy vigente está em
+> [`DEPLOY.md`](../../DEPLOY.md) (runbook) e o hardening de deploy já foi aplicado no código.
+> Os 7 sprints/52 tasks abaixo ficam arquivados como histórico da decisão abandonada
+> (ver decisão D-15 em `00-DECISOES.md`).
+
 > Porta de entrada da execução. Escrito para quem abriu o repositório agora e não sabe nada. Só caminhos relativos; nunca o valor de um segredo.
 
 ## 1. Objetivo
