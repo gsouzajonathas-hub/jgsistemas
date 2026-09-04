@@ -9,7 +9,7 @@ tasks:
   - id: T-01.01
     titulo: Teste de regressao das rotas de Cursos e Professores
     fase: F-01.1
-    status: pendente
+    status: concluida
     objetivo: Fixar via teste o comportamento esperado das rotas antes de qualquer implementacao
     arquivos:
       cria: []
@@ -20,12 +20,12 @@ tasks:
     criterio_aceite: Os casos novos falham (vermelho) com o codigo atual e passam (verde) apos T-01.02 a T-01.04 sem alterar o teste
     depende_de: []
     paralelizavel: false
-    concluida_em: null
-    suite: nao_executada
+    concluida_em: 2026-09-04
+    suite: verde
   - id: T-01.02
     titulo: Criar pagina Courses.tsx com CRUD
     fase: F-01.1
-    status: pendente
+    status: concluida
     objetivo: Entregar a tela de cursos que o produto nao tinha, seguindo o padrao de Classes.tsx
     arquivos:
       cria: [frontend/src/pages/Courses.tsx, frontend/src/pages/__tests__/Courses.test.tsx]
@@ -36,12 +36,12 @@ tasks:
     criterio_aceite: Courses.tsx lista via coursesAPI.list, cria/edita/exclui via create/update/delete com o payload do CourseSchema e mostra estado vazio com CTA quando a lista e vazia
     depende_de: [T-01.01]
     paralelizavel: false
-    concluida_em: null
-    suite: nao_executada
+    concluida_em: 2026-09-04
+    suite: verde
   - id: T-01.03
     titulo: Criar pagina Teachers.tsx com CRUD
     fase: F-01.1
-    status: pendente
+    status: concluida
     objetivo: Entregar a tela de professores que o produto nao tinha, seguindo o padrao de Classes.tsx
     arquivos:
       cria: [frontend/src/pages/Teachers.tsx, frontend/src/pages/__tests__/Teachers.test.tsx]
@@ -52,12 +52,12 @@ tasks:
     criterio_aceite: Teachers.tsx lista via teachersAPI.listAll, cria/edita/exclui via create/update/delete com o payload do TeacherSchema e mostra estado vazio com CTA quando a lista e vazia
     depende_de: [T-01.01]
     paralelizavel: false
-    concluida_em: null
-    suite: nao_executada
+    concluida_em: 2026-09-04
+    suite: verde
   - id: T-01.04
     titulo: Registrar rotas, menu e permissoes de Cursos e Professores
     fase: F-01.1
-    status: pendente
+    status: concluida
     objetivo: Expor as novas paginas no App, no menu lateral e no controle de permissoes
     arquivos:
       cria: []
@@ -68,12 +68,12 @@ tasks:
     criterio_aceite: As rotas /courses e /teachers renderizam as paginas; o menu mostra os dois itens com permission courses e teachers; ALL_PERMISSIONS contem courses e teachers
     depende_de: [T-01.02, T-01.03]
     paralelizavel: false
-    concluida_em: null
-    suite: nao_executada
+    concluida_em: 2026-09-04
+    suite: verde
   - id: T-01.05
     titulo: Suite completa, build e commit
     fase: F-01.2
-    status: pendente
+    status: concluida
     objetivo: Provar que nada quebrou, fechar a sprint e gravar o fix na main
     arquivos:
       cria: []
@@ -84,8 +84,8 @@ tasks:
     criterio_aceite: npm test termina com 0 failed, npm run build termina com exit 0 e o commit dos artefatos da ocorrencia esta na main
     depende_de: [T-01.01, T-01.02, T-01.03, T-01.04]
     paralelizavel: false
-    concluida_em: null
-    suite: nao_executada
+    concluida_em: 2026-09-04
+    suite: verde
 ---
 
 > Os campos da lista `tasks:` sao EXATAMENTE os do Contrato da Task do SKILL.md, mais `fase`, `concluida_em` e `suite`. `teste_regressao` so e preenchido na primeira task da primeira fase quando o tipo e `bug`; nas demais e `null`, com a chave presente. YAML e prosa carregam a mesma verdade e sao atualizados juntos.
@@ -113,8 +113,12 @@ teste_funcional: Admin acessa a URL /courses na barra e ve a pagina Cursos em ve
 criterio_aceite: Os casos novos falham (vermelho) com o codigo atual e passam (verde) apos T-01.02 a T-01.04 sem alterar o teste
 depende_de: []
 paralelizavel: false
-status: pendente
+status: em_andamento
 ```
+
+---
+
+> **T-01.01 — CONCLUÍDA (2026-09-04, suite: verde):** os casos de `/courses` e `/teachers` falharam (vermelho) antes de qualquer implementação e passaram sem alteração após T-01.02 a T-01.04.
 
 ---
 
@@ -132,7 +136,9 @@ teste_funcional: Na UI, admin cadastra o curso Ingles e ve a linha na lista; exc
 criterio_aceite: Courses.tsx lista via coursesAPI.list, cria/edita/exclui via create/update/delete com o payload do CourseSchema e mostra estado vazio com CTA quando a lista e vazia
 depende_de: [T-01.01]
 paralelizavel: false
-status: pendente
+status: concluida
+concluida_em: 2026-09-04
+suite: verde
 ```
 
 ---
@@ -149,7 +155,9 @@ teste_funcional: Na UI, admin cadastra o professor Ana Souza e ve a linha na lis
 criterio_aceite: Teachers.tsx lista via teachersAPI.listAll, cria/edita/exclui via create/update/delete com o payload do TeacherSchema e mostra estado vazio com CTA quando a lista e vazia
 depende_de: [T-01.01]
 paralelizavel: false
-status: pendente
+status: concluida
+concluida_em: 2026-09-04
+suite: verde
 ```
 
 ---
@@ -166,7 +174,28 @@ teste_funcional: Admin ve "Cursos" e "Professores" no menu lateral e navega para
 criterio_aceite: As rotas /courses e /teachers renderizam as paginas; o menu mostra os dois itens com permission courses e teachers; ALL_PERMISSIONS contem courses e teachers
 depende_de: [T-01.02, T-01.03]
 paralelizavel: false
-status: pendente
+status: concluida
+concluida_em: 2026-09-04
+suite: verde
+```
+
+---
+
+```yaml
+id: T-01.05
+titulo: Suite completa, build e commit
+objetivo: Provar que nada quebrou, fechar a sprint e gravar o fix na main
+arquivos:
+  cria: []
+  altera: []
+teste_integracao: Execucao da suite inteira (npm test no frontend) valida que nenhum teste existente quebrou com as mudancas
+teste_funcional: npm run build (tsc && vite build) termina com exit 0 no frontend e o commit com os artefatos da ocorrencia e gravado na main
+criterio_aceite: npm test termina com 0 failed, npm run build termina com exit 0 e o commit dos artefatos da ocorrencia esta na main
+depende_de: [T-01.01, T-01.02, T-01.03, T-01.04]
+paralelizavel: false
+status: concluida
+concluida_em: 2026-09-04
+suite: verde
 ```
 
 ---

@@ -9,6 +9,8 @@ import Students from './pages/Students';
 import StudentProfile from './pages/StudentProfile';
 import Enrollments from './pages/Enrollments';
 import Classes from './pages/Classes';
+import Courses from './pages/Courses';
+import Teachers from './pages/Teachers';
 import Attendance from './pages/Attendance';
 import Evaluations from './pages/Evaluations';
 import Boletim from './pages/Boletim';
@@ -71,6 +73,8 @@ export default function App() {
           <Route path="/students" element={<PermissionRoute permission="students"><Students /></PermissionRoute>} />
           <Route path="/students/:id" element={<PermissionRoute permission="students"><StudentProfile /></PermissionRoute>} />
           <Route path="/enrollments" element={<PermissionRoute permission="enrollments"><Enrollments /></PermissionRoute>} />
+          <Route path="/courses" element={<PermissionRoute permission="courses"><Courses /></PermissionRoute>} />
+          <Route path="/teachers" element={<PermissionRoute permission="teachers"><Teachers /></PermissionRoute>} />
           <Route path="/classes" element={<PermissionRoute permission="classes"><Classes /></PermissionRoute>} />
           <Route path="/attendance" element={<PermissionRoute permission="attendance"><Attendance /></PermissionRoute>} />
           <Route path="/evaluations" element={<PermissionRoute permission="evaluations"><Evaluations /></PermissionRoute>} />

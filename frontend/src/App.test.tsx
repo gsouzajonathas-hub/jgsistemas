@@ -20,7 +20,7 @@ vi.mock('./services/api', () => {
     materialsAPI: { list: g(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), listSales: g(), createSale: vi.fn(), dashboard: go() },
     settingsAPI: { get: go(), update: vi.fn(), uploadLogo: vi.fn() },
     studentProfileAPI: { get: vi.fn(), pdf: vi.fn() },
-    teachersAPI: { list: g() },
+    teachersAPI: { list: g(), listAll: g() },
     classesAPI: { list: g(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     attendanceAPI: { list: g(), bulk: vi.fn() },
     evaluationsAPI: { list: g(), create: vi.fn(), bulk: vi.fn(), update: vi.fn(), delete: vi.fn(), average: vi.fn() },
@@ -56,6 +56,31 @@ describe('roteamento das 5 rotas reativadas', () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByRole('heading', { level: 1, name: 'Turmas' })).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('rotas de Cursos e Professores (T-01.01)', () => {
+  it('admin acessa /courses e vê a página de Cursos sem redirect', async () => {
+    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: [] });
+    goTo('/courses');
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cursos' })).toBeInTheDocument();
+  });
+
+  it('admin acessa /teachers e vê a página de Professores sem redirect', async () => {
+    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: [] });
+    goTo('/teachers');
+    render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Professores' })).toBeInTheDocument();
+  });
+
+  it('secretary sem a permissão teachers é bloqueada e não vê /teachers', async () => {
+    setUser({ id: 2, name: 'Secretaria', email: 'sec@teste.com', role: 'secretary', permissions: [] });
+    goTo('/teachers');
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { level: 1, name: 'Professores' })).not.toBeInTheDocument();
     });
   });
 });

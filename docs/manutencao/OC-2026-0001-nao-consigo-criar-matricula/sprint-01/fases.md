@@ -8,14 +8,14 @@ atualizado_em: 2026-09-04
 fases:
   - id: F-01.1
     titulo: Fixar o comportamento
-    status: nao_iniciado
+    status: concluida
     criterio_saida: Todos os testes novos (App.test.tsx, Courses.test.tsx, Teachers.test.tsx) passam com npm test, incluindo o teste de regressao que falhava antes do fix
     paralelizavel: false
     paralela_com: []
     tasks: [T-01.01, T-01.02, T-01.03, T-01.04]
   - id: F-01.2
     titulo: Verificar e entregar
-    status: nao_iniciado
+    status: concluida
     criterio_saida: npm run build termina com exit 0 e npm test com 0 failed; commit com os artefatos da ocorrencia gravado na main
     paralelizavel: false
     paralela_com: []
@@ -59,9 +59,12 @@ flowchart LR
   classDef critico   stroke-width:3px
   classDef regressao fill:#ede4ff,stroke:#6a1b9a,color:#3d1a78,stroke-width:3px
 
-  class T_01_01 regressao
-  class T_01_02,T_01_03,T_01_04,T_01_05 pendente
-  class T_01_01,T_01_02,T_01_03,T_01_04,T_01_05 critico
+  class T_01_01 concluida
+  class T_01_02 concluida
+  class T_01_03 concluida
+  class T_01_04 concluida
+  class T_01_05 concluida
+  class T_01_01,T_01_02,T_01_04,T_01_05 critico
 ```
 
 # Fases — Sprint 01

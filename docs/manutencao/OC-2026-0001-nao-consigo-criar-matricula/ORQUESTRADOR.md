@@ -6,13 +6,13 @@ trabalho_id: OC-2026-0001
 titulo: Nao consigo criar matricula
 tipo_trabalho: ocorrencia
 tipo_ocorrencia: bug
-estagio: e2
+estagio: e4
 status: em_andamento
 criado_em: 2026-09-04
 atualizado_em: 2026-09-04
 concluido_em: null
 sprints: [sprint-01]
-caminho_critico: [T-01.01, T-01.02, T-01.03, T-01.04, T-01.05]
+caminho_critico: [T-01.01, T-01.02, T-01.04, T-01.05]
 ---
 
 > Frontmatter obrigatorio (expx-schema v1). Formato completo em `references/00-schema.md`. Substitua os marcadores; NUNCA omita uma chave — ausente e `null`, lista vazia e `[]`. Sem acento em chave nem em valor de enum. `atualizado_em` e reescrito a cada gravacao.
@@ -39,7 +39,7 @@ O usuário não consegue criar matrícula porque o sistema não tem tela para ca
 
 - Sprint 01: F-01.1 → F-01.2 — sequencial; nenhuma fase ou task declarada paralelizável (todas as tasks têm `depende_de` não vazio, exceto T-01.01, e o diagrama não declara paralelismo — paralelismo é ausência de aresta).
 
-**Caminho crítico:** T-01.01 → T-01.02 → T-01.03 → T-01.04 → T-01.05
+**Caminho crítico:** T-01.01 → T-01.02 → T-01.04 → T-01.05 (T-01.03 entra no mesmo comprimento; desempate pela cadeia de id menor nas posições iguais — regra do `references/07-diagrama.md`)
 
 ## 4. Ferramentas
 

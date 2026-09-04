@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { settingsAPI } from '../services/api';
 import {
-  LayoutDashboard, Users, GraduationCap, UserPlus,
+  LayoutDashboard, Users, GraduationCap, UserPlus, BookOpen, Presentation,
   DollarSign, Calendar, BarChart3, CreditCard, FileText, History,
   Settings, LogOut, ChevronLeft, ChevronRight, X, Package, FileSignature,
   CalendarCheck, ClipboardList, FileSpreadsheet, Award,
@@ -19,6 +19,8 @@ const navGroups: { label: string; items: { icon: any; label: string; path: strin
     items: [
       { icon: Users, label: 'Alunos', path: '/students', permission: 'students' },
       { icon: UserPlus, label: 'Matrículas', path: '/enrollments', permission: 'enrollments' },
+      { icon: BookOpen, label: 'Cursos', path: '/courses', permission: 'courses' },
+      { icon: Presentation, label: 'Professores', path: '/teachers', permission: 'teachers' },
       { icon: GraduationCap, label: 'Turmas', path: '/classes', permission: 'classes' },
       { icon: CalendarCheck, label: 'Frequência', path: '/attendance', permission: 'attendance' },
       { icon: ClipboardList, label: 'Avaliações', path: '/evaluations', permission: 'evaluations' },
