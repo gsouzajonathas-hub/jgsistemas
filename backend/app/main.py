@@ -99,6 +99,12 @@ async def lifespan(app):
     if storage.is_supabase_enabled():
         await conn.run_sync(lambda _: storage.ensure_buckets())
 
+    # Diagnóstico: status do envio de e-mail no boot (sem expor a chave/PII).
+    _has_resend = bool(os.getenv("RESEND_API_KEY", "").strip()) and bool(os.getenv("RESEND_FROM", "").strip())
+    _has_smtp = bool(os.getenv("SMTP_HOST", "").strip())
+    _email_backend = "resend" if _has_resend else ("smtp" if _has_smtp else "desabilitado")
+    print(f"[startup] E-mail transacional via {_email_backend}", flush=True)
+
     yield
 
 
