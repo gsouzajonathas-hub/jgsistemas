@@ -20,13 +20,13 @@ def _to_jsonable(obj):
 async def export_database(db: AsyncSession) -> dict:
     """Serializa todas as tabelas do banco para um dicionário JSON (backup portátil)."""
 
-    # db.run_sync passa a Session; inspect() numa Session não oferece get_table_names().
-    # Para listar tabelas e ler linhas usamos o engine (db.bind) e executamos o SELECT
-    # de forma assíncrona pela própria session (que já usa o bind correto).
-    def _table_names(sync_session):
-        return inspect(db.bind).get_table_names()
+    # inspect() não funciona na Session nem no AsyncEngine. Precisamos da connection:
+    # conn.run_sync passa a conexão sync para o callable, onde inspect() funciona.
+    async with db.bind.connect() as conn:
+        tables = await conn.run_sync(
+            lambda sync_conn: inspect(sync_conn).get_table_names()
+        )
 
-    tables = await db.run_sync(_table_names)
     result = {}
     for table in sorted(tables):
         rows = (await db.execute(text(f'SELECT * FROM "{table}"'))).all()
