@@ -20,8 +20,11 @@ def _to_jsonable(obj):
 async def export_database(db: AsyncSession) -> dict:
     """Serializa todas as tabelas do banco para um dicionário JSON (backup portátil)."""
 
-    def _table_names(sync_conn):
-        return inspect(sync_conn).get_table_names()
+    # db.run_sync passa a Session; inspect() numa Session não oferece get_table_names().
+    # Para listar tabelas e ler linhas usamos o engine (db.bind) e executamos o SELECT
+    # de forma assíncrona pela própria session (que já usa o bind correto).
+    def _table_names(sync_session):
+        return inspect(db.bind).get_table_names()
 
     tables = await db.run_sync(_table_names)
     result = {}
