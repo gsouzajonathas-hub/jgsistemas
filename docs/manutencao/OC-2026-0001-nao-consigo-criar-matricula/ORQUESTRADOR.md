@@ -84,3 +84,23 @@ O usuário não consegue criar matrícula porque o sistema não tem tela para ca
 2. Leia o `status` de cada task em `sprint-01/tasks.md`.
 3. Leia `BLOQUEIOS.md`.
 4. Continue da primeira task `pendente` ou `em_andamento` cujas dependências (`depende_de`) estão todas `concluida`. Ignore as `bloqueada` até que o bloqueio registrado seja resolvido.
+
+---
+
+### PAUSA — retomar daqui (2026-09-04)
+
+> Última sessão encerrada a pedido do usuário ("vamos dar uma pausa; guarde essa ação na memória"). Estado gravado em 2026-09-04.
+
+**Onde paramos:**
+
+- E1 a E3 **completos**: causa raiz comprovada, T-01.01 a T-01.05 `concluida` (suíte verde — 9 arquivos, 23 testes, 0 falhas), commit `3ddc93b` na main e **push feito** para `origin/main` (`gsouzajonathas-hub/jgsistemas`).
+- **Deploy em produção FEITO** (Vercel CLI manual): `https://jgsistemas.dev.br` serve o build novo (telas Cursos/Professores, rotas, menu, permissões).
+- `ORQUESTRADOR.md` está em `estagio: e4` — o E4 (QA em produção) é o próximo.
+
+**Próximo passo (único pendente antes do E5):**
+
+1. Pedir ao usuário a senha do `admin@jgsistemas.com.br` (não está registrada em nenhum doc — nunca escrever o valor).
+2. QA funcional em produção (`https://jgsistemas.dev.br`): login admin → criar Curso → criar Professor → criar Turma → criar Matrícula pela UI → validar tela de Cursos/Professores (CRUD + estado vazio) → registrar em `QA.md` (a criar, ver mapa na seção 2).
+3. Depois: E5 — relatório, tentativa de deploy do backend no Render (B-02) e resolver B-03 (integração Vercel) se o usuário quiser.
+
+**Bloqueios vigentes:** B-01 (limpeza dos dados de teste 2/2/1/16 em produção — sem credenciais de banco), B-02 (deploy do Render `update_failed`), B-03 (link Vercel aponta para repo renomeado — deploy atual foi manual via CLI: `npx vercel deploy --prod --yes --token <vercel-token> --scope team_THFE2H8TesKYPkyxr9vbCezV ./frontend`).
