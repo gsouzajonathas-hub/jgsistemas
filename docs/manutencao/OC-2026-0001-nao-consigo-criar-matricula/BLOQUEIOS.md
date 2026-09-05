@@ -13,13 +13,13 @@ bloqueios:
   - id: B-02
     task: E5-deploy
     aberto_em: 2026-09-04
-    resolvido_em: null
-    descricao: Deploy do Render em update_failed desde o commit eb9299a; RESEND_FROM/RESEND_API_KEY persistidas via API mas não ativadas até haver um deploy bem-sucedido
+    resolvido_em: 2026-09-05
+    descricao: Deploy do Render em update_failed desde o commit eb9299a; RESEND_FROM/RESEND_API_KEY persistidas via API mas não ativadas até haver um deploy bem-sucedido. RESOLVIDO na OC-2026-0003 (redeploy dep-dae1cr8n74is73bvvsmg live) — confirmado nesta análise via GET https://jgsistemas-backend.onrender.com/api/health → 200
   - id: B-03
     task: E5-deploy
     aberto_em: 2026-09-04
-    resolvido_em: null
-    descricao: A integração git do Vercel (projeto jgsistemas) aponta para jonathasGodinho/jgsistemas, repositório que não existe mais (renomeado para gsouzajonathas-hub/jgsistemas, repoId 1353166786) — pushes na main não disparam deploy automático; o deploy atual foi feito manualmente via Vercel CLI (npx vercel deploy --prod); tentativa de relink via API manteve o org antigo (a credencial GitHub do Vercel não alcança a conta nova)
+    resolvido_em: 2026-09-05
+    descricao: A integração git do Vercel (projeto jgsistemas) aponta para jonathasGodinho/jgsistemas, repositório que não existe mais (renomeado para gsouzajonathas-hub/jgsistemas, repoId 1353166786) — pushes na main não disparam deploy automático; o deploy atual foi feito manualmente via Vercel CLI (npx vercel deploy --prod); tentativa de relink via API manteve o org antigo (a credencial GitHub do Vercel não alcança a conta nova). RESOLVIDO na OC-2026-0004 (vercel.json movido para frontend/, deploy dpl_AQjWtNWmuR6S3NCvCZPv1434dzAQ) — confirmado nesta análise via GET https://jgsistemas.dev.br/login → 200
 ---
 
 # Bloqueios
