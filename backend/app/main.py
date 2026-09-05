@@ -3,7 +3,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from app.database import engine, Base
 from app.utils.paths import get_upload_dir
 from app.config import load_env
 from app.utils.security import global_rate_limited
@@ -21,81 +20,66 @@ import os
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 ENABLE_DOCS = ENVIRONMENT != "production"
 
-@asynccontextmanager
-async def lifespan(app):
-    from app.database import async_session, engine, Base
-    from sqlalchemy import select, text
-    from app.models.school import School
+async def _run_alembic_migrations():
+    """Aplica o schema via Alembic (fonte única de verdade — ver alembic/versions/).
+
+    Roda como subprocesso (`python -m alembic`) para não misturar o event loop
+    do lifespan com o `asyncio.run()` interno do alembic/env.py, e para isolar
+    a engine síncrona de migração da engine assíncrona da aplicação.
+
+    Primeira execução contra um banco que já tinha o schema criado pelo antigo
+    mecanismo (`create_all` + `ALTER TABLE` manuais, usado até esta versão):
+    detecta que as tabelas já existem mas `alembic_version` não, e roda
+    `stamp head` (marca como já aplicado) em vez de `upgrade head` (que
+    tentaria recriar tabelas existentes e falharia). Banco novo/vazio roda
+    `upgrade head` normalmente.
+
+    Se o banco já está na revisão mais recente, não spawna o subprocesso —
+    evita o custo de um novo interpretador Python a cada boot (relevante nos
+    testes, que recriam o TestClient/lifespan a cada teste sobre o mesmo
+    banco temporário).
+    """
+    import sys
+    import asyncio as _asyncio
+    from pathlib import Path
+    from sqlalchemy import inspect, text
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from app.database import engine
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    head_rev = ScriptDirectory.from_config(Config(str(backend_dir / "alembic.ini"))).get_current_head()
 
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        existing_tables = await conn.run_sync(lambda c: set(inspect(c).get_table_names()))
+        current_rev = None
+        if "alembic_version" in existing_tables:
+            row = (await conn.execute(text("SELECT version_num FROM alembic_version"))).first()
+            current_rev = row[0] if row else None
 
-    if engine.dialect.name == "sqlite":
-        async with engine.begin() as conn:
-            def add_missing_columns(sync_conn):
-                cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(students)")).fetchall()}
-                if "monthly_fee" not in cols:
-                    sync_conn.execute(text("ALTER TABLE students ADD COLUMN monthly_fee FLOAT"))
-                if "due_day" not in cols:
-                    sync_conn.execute(text("ALTER TABLE students ADD COLUMN due_day INTEGER"))
+    if current_rev is not None and current_rev == head_rev:
+        return
 
-                user_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(users)")).fetchall()}
-                if "reset_token_hash" not in user_cols:
-                    sync_conn.execute(text("ALTER TABLE users ADD COLUMN reset_token_hash VARCHAR(64)"))
-                if "reset_token_expires" not in user_cols:
-                    sync_conn.execute(text("ALTER TABLE users ADD COLUMN reset_token_expires DATETIME"))
-                if "permissions" not in user_cols:
-                    sync_conn.execute(text("ALTER TABLE users ADD COLUMN permissions TEXT"))
+    subcommand = "stamp" if existing_tables and "alembic_version" not in existing_tables else "upgrade"
+    proc = await _asyncio.create_subprocess_exec(
+        sys.executable, "-m", "alembic", "-c", str(backend_dir / "alembic.ini"), subcommand, "head",
+        cwd=str(backend_dir),
+        stdout=_asyncio.subprocess.PIPE,
+        stderr=_asyncio.subprocess.STDOUT,
+    )
+    output = (await proc.stdout.read()).decode(errors="replace")
+    await proc.wait()
+    if proc.returncode != 0:
+        raise RuntimeError(f"Falha ao aplicar migrações do banco (alembic {subcommand} head):\n{output}")
 
-                inst_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(installments)")).fetchall()}
-                if "carnet_id" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN carnet_id INTEGER"))
-                if "installment_number" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN installment_number INTEGER"))
-                if "discount" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN discount FLOAT DEFAULT 0"))
-                if "late_fee" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN late_fee FLOAT DEFAULT 0"))
-                if "interest" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN interest FLOAT DEFAULT 0"))
-                if "total_paid" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN total_paid FLOAT DEFAULT 0"))
-                if "contract_id" not in inst_cols:
-                    sync_conn.execute(text("ALTER TABLE installments ADD COLUMN contract_id INTEGER"))
 
-                plan_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(financial_plans)")).fetchall()}
-                if "course_id" not in plan_cols:
-                    sync_conn.execute(text("ALTER TABLE financial_plans ADD COLUMN course_id INTEGER"))
-                if "duration_months" not in plan_cols:
-                    sync_conn.execute(text("ALTER TABLE financial_plans ADD COLUMN duration_months INTEGER DEFAULT 1"))
-                if "discount_type" not in plan_cols:
-                    sync_conn.execute(text("ALTER TABLE financial_plans ADD COLUMN discount_type VARCHAR(20) DEFAULT 'percent'"))
-                if "discount_value" not in plan_cols:
-                    sync_conn.execute(text("ALTER TABLE financial_plans ADD COLUMN discount_value FLOAT DEFAULT 0"))
-                if "upfront_discount_pct" not in plan_cols:
-                    sync_conn.execute(text("ALTER TABLE financial_plans ADD COLUMN upfront_discount_pct FLOAT DEFAULT 0"))
+@asynccontextmanager
+async def lifespan(app):
+    from app.database import async_session
+    from sqlalchemy import select
+    from app.models.school import School
 
-                settings_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(school_settings)")).fetchall()}
-                if "pix_key" not in settings_cols:
-                    sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN pix_key VARCHAR(200)"))
-                if "slogan" not in settings_cols:
-                    sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN slogan VARCHAR(300)"))
-                if "social_media" not in settings_cols:
-                    sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN social_media VARCHAR(200)"))
-                if "payment_methods" not in settings_cols:
-                    sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN payment_methods VARCHAR(200) DEFAULT 'PIX,Dinheiro,Débito,Crédito'"))
-
-                audit_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(audit_logs)")).fetchall()}
-                if "actor_role" not in audit_cols:
-                    sync_conn.execute(text("ALTER TABLE audit_logs ADD COLUMN actor_role VARCHAR(30)"))
-            await conn.run_sync(add_missing_columns)
-
-    elif engine.dialect.name == "postgresql":
-        async with engine.begin() as conn:
-            # T-04.03: actor_role no audit_logs (produção). IF NOT EXISTS é idempotente.
-            await conn.execute(
-                text("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS actor_role VARCHAR(30)")
-            )
+    await _run_alembic_migrations()
 
     async with async_session() as db:
         result = await db.execute(select(School).limit(1))
@@ -143,7 +127,7 @@ async def lifespan(app):
     # Ativa buckets do Supabase Storage se configurado (senão, no-op de disco local)
     from app.utils import storage
     if storage.is_supabase_enabled():
-        await conn.run_sync(lambda _: storage.ensure_buckets())
+        storage.ensure_buckets()
 
     # Diagnóstico: status do envio de e-mail no boot (sem expor a chave/PII).
     _has_resend = bool(os.getenv("RESEND_API_KEY", "").strip()) and bool(os.getenv("RESEND_FROM", "").strip())

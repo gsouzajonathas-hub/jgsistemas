@@ -49,6 +49,8 @@ backend/frontend_dist/
 .mimocode/
 opencode.json
 .vercel
+.sisyphus/
+expxdev/
 
 # Backups de banco de dados (NUNCA versionar)
 backups/

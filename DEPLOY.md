@@ -142,9 +142,13 @@ Checklist pós-deploy:
 - **Migração de dados existente:** se houver banco SQLite com dados reais a migrar, use
   `backend/scripts/migrate_sqlite_to_postgres.py` antes do go-live (o banco atual só tem
   dados de teste E2E, decidiu-se começar limpo).
-- **Evolução de schema** sem Alembic: adicione arquivos de migração em `supabase/migrations/`
-  e rode `supabase db push` (ou SQL manual). O `create_all` do startup cria tabelas novas,
-  mas **não** adiciona colunas a tabelas existentes.
+- **Evolução de schema via Alembic** (`backend/alembic/`, fonte única de verdade desde
+  2026-09-05 — ver D-17 em `docs/analise-sistema/00-DECISOES.md`): para mudar o schema, edite
+  os models e rode `alembic revision --autogenerate -m "descrição"` dentro de `backend/`, revise
+  o arquivo gerado em `alembic/versions/` e commite. O backend aplica `alembic upgrade head`
+  sozinho no startup (dev e produção, SQLite e Postgres) — não precisa rodar nada manualmente
+  no deploy. `supabase/migrations/` ficou como registro histórico do schema inicial; não é mais
+  usado para aplicar mudanças.
 - **Plano abandonado:** havia um plano (docs/deploy-vercel-seguranca) de reescrever o backend
   como Supabase Edge Functions (Deno). Ele foi substituído pela opção 1 (FastAPI no Render +
   Supabase Postgres). O `supabase/` hoje contém apenas schema/seed — sem Edge Functions.
