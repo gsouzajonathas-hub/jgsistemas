@@ -29,3 +29,5 @@
 **SUPPORT_ADMIN_* definidos em 2026-09-05** (email do usuário + senha fornecida; nome "Suporte") → redeploy `dep-dae1cr8n74is73bvvsmg` **live** → conta super admin **criada** (id 2, role `super_admin`, login 200) → QA E4 concluído (evidências em `00-AUDITORIA.md` §F6). B-01 e B-05 fechados; T-05.03 e T-05.04 `concluida`.
 
 **Recomendação de segurança deixada:** a senha do banco foi exposta na mensagem do commit público `74c2a05` — após concluir o fluxo, fazer **Reset database password** no painel do Supabase (Settings → Database) e atualizar a env `PGPASSWORD`.
+
+**ROTAÇÃO CONCLUÍDA 2026-09-05:** usuário resetou a senha no Supabase → conexão testada via asyncpg (Postgres 17.6 OK) → `PGPASSWORD` atualizada no Render via API per-key (17 env vars preservadas) → redeploy `dep-dae20pad0e5s73er2m30` **live** → health 200 → login super admin 200 com `superadmin.seed` re-executado no novo build (prova de conexão com a nova senha). Vale recomendar também apagar/rewrite do commit antigo quando conveniente.
