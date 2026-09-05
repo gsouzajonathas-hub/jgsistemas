@@ -42,3 +42,21 @@ Ambiente: backend `https://jgsistemas-backend.onrender.com` (deploy `dep-dae1cr8
 Dados de QA **limpos após validação**: venda fictícia id=4 removida do Postgres (DELETE), estoque do material 1 reposto (5), pix_key de QA revertida para vazia (UPDATE). 3 vendas reais remanescentes (ids 1–3, preservadas).
 
 Achado colateral de QA (registrado, não bloqueante): `GET /api/settings` retorna `primary_color` como `null` mesmo o schema exigindo string — o `PUT` com payload derivado do GET falha com 422 se o valor não for resgatado pelo frontend; não afeta fluxos do frontend (que envia o campo sempre). Registrado em BAIXA para revisão futura (schema default em `SettingsSchema` já cobre, mas GET deveria devolver o default).
+
+---
+
+## F7 — Varredura e limpeza de segredos no repositório (2026-09-05)
+
+Solicitação do usuário: nenhuma chave/segredo de conexão pode permanecer exposta no código, nas docs ou no histórico git.
+
+**Varredura** (working tree + todos os blobs + mensagens de todos os commits):
+- Segredos reais encontrados (todos em `docs/` e na mensagem do commit do suporte a `PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE`): senha antiga do Postgres (já rotacionada), project ref do Supabase e e-mail do dono. Nenhum token (Render/Vercel/Supabase/Resend) estava versionado.
+- `.env` locais confirmados como não versionados (`.gitignore` cobre `.env`, `.env.local`, `.env.production`); apenas `.env.example` com placeholders é rastreado.
+- Falsos positivos (não são segredos): exemplos didáticos em `.env.example`, `README.md`, `DEPLOY.md`, `render.yaml`, `docker-compose.yml` (`postgresql://user:senha@host/db`, `<REF>:<SENHA>`, `${POSTGRES_PASSWORD}`).
+
+**Limpeza**:
+- `git filter-repo --replace-text` (blobs) + `--message-callback` (mensagens) redigiram todos os valores reais para `***REDACTED***` em **todos** os commits; reflog expirado e `git gc --prune=now` removeram os objetos antigos; backup em bundle com histórico antigo foi deletado.
+- `git push --force origin main` (histórico reescrito `... → fc22897`); remoto sem tags/branches adicionais apontando para o histórico antigo; repositório é **privado**.
+- Pós-limpeza: varredura local sem nenhum match de segredo real (restam apenas placeholders); `/api/health` 200 (deploy íntegro); mensagem do commit com `PG*` redigida confirmada via API do GitHub.
+
+**Conclusão**: NDA está exposto — nenhum segredo real permanece no working tree, no histórico git ou no remoto.
