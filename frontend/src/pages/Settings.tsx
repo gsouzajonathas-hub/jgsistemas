@@ -42,6 +42,7 @@ export default function Settings() {
   const [users, setUsers] = useState<any[]>([]);
   const [tab, setTab] = useState<'school' | 'users' | 'appearance'>('school');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -60,13 +61,18 @@ export default function Settings() {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError('');
     try {
       await settingsAPI.update(settings);
-      pushSettingsCache(settings);
+      // Cache global passa a refletir o que o servidor confirmou (fecha H2 — cache velho)
+      const { data: fresh } = await settingsAPI.get();
+      setSettings(fresh);
+      pushSettingsCache(fresh);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Erro ao salvar as configurações. Tente novamente.');
+    } catch {
+      // D-12: formulário intacto (estado local preservado) + erro amigável
+      setSaveError('Erro ao salvar. Tente novamente.');
     } finally { setSaving(false); }
   };
 
@@ -183,7 +189,7 @@ export default function Settings() {
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-[3px] border-primary-600/20 border-t-primary-600 dark:border-primary-400/20 dark:border-t-primary-400" /></div>;
 
-  const roleLabels: Record<string, string> = { admin: 'Administrador', secretary: 'Secretaria', teacher: 'Professor', financial: 'Financeiro', coordinator: 'Coordenador' };
+  const roleLabels: Record<string, string> = { admin: 'Administrador', super_admin: 'Super Admin', secretary: 'Secretaria', teacher: 'Professor', financial: 'Financeiro', coordinator: 'Coordenador' };
 
   return (
     <div className="space-y-6">
@@ -206,6 +212,7 @@ export default function Settings() {
       </div>
 
       {saved && <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-3 rounded-lg text-sm">Configurações salvas com sucesso!</div>}
+      {saveError && <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm">{saveError}</div>}
 
       {tab === 'school' && settings && (
         <div className="card-surface p-6 space-y-4">

@@ -28,7 +28,7 @@ vi.mock('../../hooks/useSettings', () => ({
 }));
 
 import Settings from '../Settings';
-import { authAPI } from '../../services/api';
+import { authAPI, settingsAPI } from '../../services/api';
 
 describe('Settings', () => {
   beforeEach(() => {
@@ -91,5 +91,22 @@ describe('Settings', () => {
 
     await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Não é possível excluir o último administrador ativo'));
     alertSpy.mockRestore();
+  });
+
+  it('mantém a chave PIX digitada e mostra erro quando o PUT falha (D-12)', async () => {
+    (settingsAPI.update as ReturnType<typeof vi.fn>).mockRejectedValue({
+      response: { data: { detail: 'Erro ao salvar. Tente novamente.' } },
+    });
+    render(<Settings />);
+    await screen.findByDisplayValue('Escola Teste');
+
+    const pixInput = screen.getByPlaceholderText(/CPF\/CNPJ, e-mail, telefone ou chave aleatória/i);
+    fireEvent.change(pixInput, { target: { value: 'pix@teste.com' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Salvar/i }));
+
+    // D-12: o campo preserva o valor digitado e a mensagem aparece na tela
+    expect(await screen.findByDisplayValue('pix@teste.com')).toBeInTheDocument();
+    expect(await screen.findByText(/Erro ao salvar\. Tente novamente\./i)).toBeInTheDocument();
   });
 });

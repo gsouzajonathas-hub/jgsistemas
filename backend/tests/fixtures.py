@@ -16,6 +16,8 @@ from app.models.class_group import ClassGroup
 from app.models.student import Student
 from app.models.teacher import Teacher
 from app.models.user import User
+from app.models.settings import SchoolSettings
+from app.models.materials import TeachingMaterial, MaterialSale
 from app.utils.auth import create_access_token, hash_password
 
 
@@ -118,3 +120,77 @@ async def aluno(db_session: AsyncSession) -> Student:
             "enrollment_date": date(2026, 2, 1),
         },
     )
+
+
+@pytest.fixture
+async def settings_com_pix(db_session: AsyncSession) -> SchoolSettings:
+    """SchoolSettings única (linha 1) com pix_key — formato esperado por GET/PUT /api/settings."""
+    return await _get_or_create(
+        db_session,
+        SchoolSettings,
+        filters={"id": 1},
+        defaults={
+            "school_name": "Escola Teste",
+            "pix_key": "teste@pix.local",
+            "payment_methods": "PIX,Dinheiro,Débito,Crédito",
+        },
+    )
+
+
+@pytest.fixture
+async def material_sale_ctx(db_session: AsyncSession) -> dict:
+    """Contexto de venda de material didático: material + aluno + venda (MaterialSale com .id)."""
+    material = await _get_or_create(
+        db_session,
+        TeachingMaterial,
+        filters={"name": "Apostila Teste"},
+        defaults={
+            "name": "Apostila Teste",
+            "description": "Material de apoio",
+            "price": 45.90,
+            "stock": 20,
+            "category": "Didático",
+            "is_active": 1,
+        },
+    )
+    student = await _get_or_create(
+        db_session,
+        Student,
+        filters={"cpf": "88877766655"},
+        defaults={
+            "full_name": "Aluna Material",
+            "cpf": "88877766655",
+            "email": "material@teste.local",
+            "status": "active",
+            "unit": "Matriz",
+            "enrollment_date": date(2026, 2, 1),
+        },
+    )
+    sale = await _get_or_create(
+        db_session,
+        MaterialSale,
+        filters={"material_id": material.id, "student_id": student.id},
+        defaults={
+            "material_id": material.id,
+            "student_id": student.id,
+            "quantity": 1,
+            "unit_price": 45.90,
+            "total_price": 45.90,
+            "payment_method": "PIX",
+        },
+    )
+    ctx = type("MaterialSaleCtx", (), {})()
+    ctx.material = material
+    ctx.student = student
+    ctx.sale = sale
+    return ctx
+
+
+@pytest.fixture
+def valores_super_admin() -> dict:
+    """Credenciais do Super Admin de suporte — mesmo formato das env vars de produção."""
+    return {
+        "email": "suporte@teste.local",
+        "password": "suporte-teste-123",
+        "name": "Suporte Teste",
+    }

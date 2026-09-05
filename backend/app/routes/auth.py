@@ -306,6 +306,14 @@ async def delete_user(
                 detail="Não é possível excluir o último administrador ativo",
             )
 
+    # Guarda: a conta de suporte (super_admin) não pode ser excluída por engano —
+    # a reposição só aconteceria no próximo boot do seed. (00-AUDITORIA.md, MÉDIA)
+    if user.role == "super_admin":
+        raise HTTPException(
+            status_code=400,
+            detail="Não é possível excluir a conta de suporte (super admin)",
+        )
+
     # Limpeza de dependências (D-01): preserva trilha de auditoria e comunicacao
     # em vez de apagar junto. Em bancos existentes (sem ondelete no schema),
     # o UPDATE antes do DELETE evita o IntegrityError.
@@ -346,6 +354,12 @@ async def update_user(
             raise HTTPException(status_code=400, detail="Email já cadastrado")
         user.email = req.email
     if req.role is not None:
+        # Super admin (suporte) não pode ser rebaixado pela API (D-08/tarefa T-04.02).
+        if user.role == "super_admin" and req.role != "super_admin":
+            raise HTTPException(
+                status_code=400,
+                detail="Não é possível alterar a role da conta de suporte (super admin)",
+            )
         user.role = req.role if req.role in ("admin", "secretary", "teacher") else "secretary"
     if req.permissions is not None:
         user.permissions = json.dumps(req.permissions)

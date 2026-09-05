@@ -84,7 +84,18 @@ async def lifespan(app):
                     sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN social_media VARCHAR(200)"))
                 if "payment_methods" not in settings_cols:
                     sync_conn.execute(text("ALTER TABLE school_settings ADD COLUMN payment_methods VARCHAR(200) DEFAULT 'PIX,Dinheiro,Débito,Crédito'"))
+
+                audit_cols = {row[1] for row in sync_conn.execute(text("PRAGMA table_info(audit_logs)")).fetchall()}
+                if "actor_role" not in audit_cols:
+                    sync_conn.execute(text("ALTER TABLE audit_logs ADD COLUMN actor_role VARCHAR(30)"))
             await conn.run_sync(add_missing_columns)
+
+    elif engine.dialect.name == "postgresql":
+        async with engine.begin() as conn:
+            # T-04.03: actor_role no audit_logs (produção). IF NOT EXISTS é idempotente.
+            await conn.execute(
+                text("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS actor_role VARCHAR(30)")
+            )
 
     async with async_session() as db:
         result = await db.execute(select(School).limit(1))
@@ -93,6 +104,41 @@ async def lifespan(app):
             school = School(name="Gestão Escolar")
             db.add(school)
             await db.commit()
+
+    # Seed do Super Admin de suporte (D-13): conta de suporte criada/atualizada no
+    # startup a partir de SUPPORT_ADMIN_EMAIL/SUPPORT_ADMIN_PASSWORD (+ SUPPORT_ADMIN_NAME
+    # opcional, default "Suporte JG Sistemas"). Sem env vars → no-op silencioso.
+    # NUNCA imprimir a senha (nem em log nem em artefato).
+    from app.models.user import User
+    from app.utils.auth import hash_password
+    from app.utils.audit import log_audit
+
+    _support_email = os.getenv("SUPPORT_ADMIN_EMAIL", "").strip()
+    _support_password = os.getenv("SUPPORT_ADMIN_PASSWORD", "").strip()
+    if _support_email and _support_password:
+        async with async_session() as db:
+            result = await db.execute(select(User).where(User.email == _support_email))
+            support = result.scalar_one_or_none()
+            support_name = os.getenv("SUPPORT_ADMIN_NAME", "Suporte JG Sistemas").strip() or "Suporte JG Sistemas"
+            if support:
+                support.role = "super_admin"
+                support.name = support_name
+                support.password_hash = hash_password(_support_password)
+                support.is_active = True
+            else:
+                support = User(
+                    name=support_name,
+                    email=_support_email,
+                    password_hash=hash_password(_support_password),
+                    role="super_admin",
+                    is_active=True,
+                )
+                db.add(support)
+            await db.flush()  # garante support.id sem depender de commit
+            await log_audit(db, None, "superadmin.seed", "user", support.id,
+                            details=f"email={_support_email}")
+            await db.commit()
+        print(f"[startup] Super Admin de suporte pronto ({_support_email})", flush=True)
 
     # Ativa buckets do Supabase Storage se configurado (senão, no-op de disco local)
     from app.utils import storage

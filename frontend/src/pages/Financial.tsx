@@ -342,6 +342,7 @@ function SalesTab() {
   const [sales, setSales] = useState<MaterialSale[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -349,6 +350,25 @@ function SalesTab() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const downloadReceipt = async (saleId: number) => {
+    setDownloading(saleId);
+    try {
+      const resp = await materialsAPI.receipt(saleId);
+      const url = URL.createObjectURL(new Blob([resp.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = (resp.headers?.['content-disposition'] as string) || '';
+      const match = cd.match(/filename="([^"]+)"/);
+      a.download = match ? match[1] : `recibo-venda-${saleId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -368,6 +388,7 @@ function SalesTab() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Total</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Pagamento</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Data</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -380,9 +401,15 @@ function SalesTab() {
                   <td className="px-4 py-3 text-sm font-medium text-green-700">R$ {s.total_price.toFixed(2)}</td>
                   <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{s.payment_method || '-'}</td>
                   <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{s.created_at ? formatDate(s.created_at) : '-'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => downloadReceipt(s.id)} disabled={downloading === s.id}
+                      className="px-3 py-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1 ml-auto disabled:opacity-50">
+                      <FileText className="w-3 h-3" /> {downloading === s.id ? 'Gerando...' : 'Recibo'}
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {sales.length === 0 && <tr><td colSpan={7} className="text-center py-12 text-slate-400">Nenhuma venda registrada</td></tr>}
+              {sales.length === 0 && <tr><td colSpan={8} className="text-center py-12 text-slate-400">Nenhuma venda registrada</td></tr>}
             </tbody>
           </table>
         </div>

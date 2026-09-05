@@ -95,14 +95,16 @@ def _material_decorations(school, cnpj, subtitle, logo_path, issue_date, receipt
     return draw
 
 
-def build_material_receipt_pdf(sale, material, student, settings) -> bytes:
+def build_material_receipt_pdf(sale, material, student, settings, receipt_number: str | None = None) -> bytes:
     school = settings.school_name if settings and settings.school_name else "Gestão Escolar"
     cnpj = settings.cnpj if settings and settings.cnpj else ""
     school_phone = settings.phone if settings and settings.phone else ""
     school_email = settings.email if settings and settings.email else ""
     issue_date = date.today().strftime("%d/%m/%Y")
     logo_path = _school_logo(settings)
-    receipt_number = f"MAT-{sale.id:06d}"
+    # Numeração REC-{ano}-{contagem:05d} alimentada pela rota (padrão do Financeiro);
+    # fallback MAT-{id} mantido para compatibilidade.
+    receipt_number = receipt_number or f"MAT-{sale.id:06d}"
 
     stream = io.BytesIO()
     doc = SimpleDocTemplate(

@@ -15,10 +15,10 @@ router = APIRouter()
 
 class SettingsSchema(BaseModel):
     school_name: str = "Gestão Escolar"
-    address: str = ""
-    phone: str = ""
-    email: str = ""
-    cnpj: str = ""
+    address: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    cnpj: str | None = None
     pix_key: str = ""
     slogan: str = ""
     social_media: str = ""

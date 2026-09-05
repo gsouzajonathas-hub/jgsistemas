@@ -33,6 +33,7 @@ async def list_audit(
         "logs": [{
             "id": l.id,
             "user_name": users.get(l.user_id, "Sistema"),
+            "actor_role": l.actor_role,
             "action": l.action,
             "entity": l.entity,
             "entity_id": l.entity_id,

@@ -86,6 +86,9 @@ async def get_current_user(
 
 def require_role(*roles):
     async def role_checker(current_user: User = Depends(get_current_user)):
+        # Super admin (D-08) tem acesso total: passa em qualquer restrição de role.
+        if current_user.role == "super_admin":
+            return current_user
         if current_user.role not in roles:
             raise HTTPException(status_code=403, detail="Acesso negado")
         return current_user

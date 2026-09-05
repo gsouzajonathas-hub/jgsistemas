@@ -76,7 +76,17 @@ export default function Audit() {
                   return (
                     <tr key={l.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                       <td className="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400">{formatDate(l.created_at)}</td>
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{l.user_name}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        <span className="flex items-center gap-1.5">
+                          {l.user_name}
+                          {l.actor_role === 'super_admin' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                              <ShieldCheck className="w-3 h-3" />
+                              Super Admin
+                            </span>
+                          )}
+                        </span>
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${a.color}`}>
                           <History className="w-3 h-3" />

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date
 from app.database import get_db
 from app.models.materials import TeachingMaterial, MaterialSale
 from app.utils.auth import get_current_user, require_role
@@ -202,13 +203,23 @@ async def material_receipt(sale_id: int, current_user=Depends(get_current_user),
     settings_r = await db.execute(select(SchoolSettings).limit(1))
     settings = settings_r.scalar_one_or_none()
 
+    # Numeração REC-{ano}-{contagem:05d} — critério do Financeiro (financial.py:577-580):
+    # contar as vendas de material do ano da venda e montar o número sequencial.
+    venda_ano = sale.created_at.year if sale.created_at else date.today().year
+    count = (await db.execute(
+        select(func.count()).select_from(MaterialSale).where(
+            MaterialSale.created_at >= date(venda_ano, 1, 1)
+        )
+    )).scalar() or 0
+    receipt_number = f"REC-{venda_ano}-{count:05d}"
+
     from app.services.material_receipt_service import build_material_receipt_pdf
-    pdf_bytes = build_material_receipt_pdf(sale, material, student, settings)
+    pdf_bytes = build_material_receipt_pdf(sale, material, student, settings, receipt_number)
 
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="recibo-material-{sale.id}.pdf"'
+            "Content-Disposition": f'attachment; filename="recibo-{receipt_number}.pdf"'
         }
     )

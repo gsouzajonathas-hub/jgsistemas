@@ -49,6 +49,7 @@ const navGroups: { label: string; items: { icon: any; label: string; path: strin
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
+  super_admin: 'Super Admin',
   secretary: 'Secretaria',
   teacher: 'Professor',
   financial: 'Financeiro',

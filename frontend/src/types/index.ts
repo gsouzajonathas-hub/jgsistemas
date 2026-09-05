@@ -131,6 +131,7 @@ export interface MaterialSale {
 export interface AuditLog {
   id: number;
   user_name: string;
+  actor_role?: string | null;
   action: string;
   entity?: string;
   entity_id?: number | null;
