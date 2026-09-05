@@ -18,6 +18,7 @@ D-10 | Recibo de venda de material passa a usar o mesmo formato do Financeiro: `
 D-11 | Escopo da entrega: somente chave PIX, recibo de material e conta super admin — nada mais (P-11 A) | Itens adicionais | Não há demanda extra confirmada
 D-12 | Falha ao salvar o PIX: o modal mantém tudo o que foi digitado e mostra "Erro ao salvar. Tente novamente." (P-13 A) | Apagar o formulário | Evita retrabalho e perda de digitação
 D-13 | Recuperação de senha do suporte = atualizar a variável de ambiente e reiniciar o backend; a conta é recriada/atualizada no startup (P-14 A) | Link de reset por e-mail | Fluxo de emergência independente de e-mail corporativo
+D-14 | Recibo de material (`GET /sales/{sale_id}/receipt`) exige apenas autenticação (qualquer role logada), não role específica — valida o R3 da base 02-AREA-venda-materiais.md | Restrição por role (admin/secretary) | Dado não sensível; consistente com o recibo financeiro; fechou o achado BAIXA da F6
 ```
 
 > Nota técnica (não é pendência): a whitelist de roles atual (`backend/app/routes/auth.py:155` e `:349`) só aceita `admin|secretary|teacher` e rebaixa qualquer outra role para `secretary`. A F3 deve garantir que o seed automático da conta de suporte seja independente dessa whitelist e que `PUT /users/{id}` não consiga rebaixar a role `super_admin` por engano. Lacuna L2 (causa do PIX) será tratada com teste de reprodução na F3 antes de qualquer correção.
