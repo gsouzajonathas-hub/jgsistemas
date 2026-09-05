@@ -26,3 +26,19 @@ VEREDITO: SIM — o plano está pronto para execução autônoma.
 Última execução pytest completa: `77 passed in 44.93s`. Última execução vitest completa: `15 passed (15) / 42 passed (42)`. Build: `✓ built in 12.77s`, exit 0.
 
 Achado MÉDIA (DELETE de super_admin) corrigido na F6 — ver tabela acima.
+
+---
+
+## F6 — QA funcional E4 em produção (T-05.04, 2026-09-05)
+
+Ambiente: backend `https://jgsistemas-backend.onrender.com` (deploy `dep-dae1cr8n74is73bvvsmg`, commit `9c7e3be`, **live**); frontend `https://jgsistemas.vercel.app` (health 200).
+
+| # | fluxo | evidência | resultado |
+|---|---|---|---|
+| 1 | Configurações → chave PIX persiste ao reabrir | `PUT /api/settings` (pix_key QA marcada) → 200; `GET /api/settings` reaberto → pix_key idêntica | ✅ OK |
+| 2 | Materiais → venda → botão Recibo baixa PDF | venda id=4 (PIX, aluno Igor, material "Livro mundo do saber" R$ 390) → `GET /api/materials/sales/4/receipt` → 200, `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="recibo-REC-2026-00004.pdf"`, assinatura `%PDF` válida (3737 bytes); numeração REC-{ano}-{contagem:05d} = 4ª venda do ano | ✅ OK |
+| 3 | Auditoria mostra ações do super admin com `actor_role` | `GET /api/audit` → logs 80–82 do usuário Suporte com `actor_role: "super_admin"` (login) + `superadmin.seed` (id 79, details email do suporte); total 75 logs | ✅ OK |
+
+Dados de QA **limpos após validação**: venda fictícia id=4 removida do Postgres (DELETE), estoque do material 1 reposto (5), pix_key de QA revertida para vazia (UPDATE). 3 vendas reais remanescentes (ids 1–3, preservadas).
+
+Achado colateral de QA (registrado, não bloqueante): `GET /api/settings` retorna `primary_color` como `null` mesmo o schema exigindo string — o `PUT` com payload derivado do GET falha com 422 se o valor não for resgatado pelo frontend; não afeta fluxos do frontend (que envia o campo sempre). Registrado em BAIXA para revisão futura (schema default em `SettingsSchema` já cobre, mas GET deveria devolver o default).
