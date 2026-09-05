@@ -6,11 +6,11 @@ trabalho_id: OC-2026-0001
 titulo: Nao consigo criar matricula
 tipo_trabalho: ocorrencia
 tipo_ocorrencia: bug
-estagio: e4
-status: em_andamento
+estagio: e5
+status: concluido
 criado_em: 2026-09-04
-atualizado_em: 2026-09-04
-concluido_em: null
+atualizado_em: 2026-09-05
+concluido_em: 2026-09-05
 sprints: [sprint-01]
 caminho_critico: [T-01.01, T-01.02, T-01.04, T-01.05]
 ---
@@ -104,3 +104,11 @@ O usuário não consegue criar matrícula porque o sistema não tem tela para ca
 3. Depois: E5 — relatório, tentativa de deploy do backend no Render (B-02) e resolver B-03 (integração Vercel) se o usuário quiser.
 
 **Bloqueios vigentes:** B-01 (limpeza dos dados de teste 2/2/1/16 em produção — sem credenciais de banco), B-02 (deploy do Render `update_failed`), B-03 (link Vercel aponta para repo renomeado — deploy atual foi manual via CLI: `npx vercel deploy --prod --yes --token <vercel-token> --scope team_THFE2H8TesKYPkyxr9vbCezV ./frontend`).
+
+---
+
+### ENCERRAMENTO — 2026-09-05
+
+B-02 e B-03 confirmados resolvidos (ver `BLOQUEIOS.md`) — Render e Vercel respondendo 200 em produção após os fixes das ocorrências OC-2026-0003 e OC-2026-0004. B-01 (dados de teste em produção) permanece registrado, sem impacto no funcionamento.
+
+O código de Cursos/Professores está implementado, testado (suíte verde) e em produção desde o commit `3ddc93b`. O dono do produto autorizou o encerramento da ocorrência nesta data com base nessa evidência, **sem o E4 (QA funcional manual em produção) ter sido executado formalmente** — decisão dele, registrada aqui para histórico. Se qualquer problema na cadeia curso → professor → turma → matrícula aparecer depois, reabrir como nova ocorrência.

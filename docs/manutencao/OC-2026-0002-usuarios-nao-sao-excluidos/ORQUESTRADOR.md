@@ -6,11 +6,11 @@ trabalho_id: OC-2026-0002
 titulo: Usuarios nao sao excluidos nas configuracoes
 tipo_trabalho: ocorrencia
 tipo_ocorrencia: bug
-estagio: e3
-status: em_andamento
+estagio: e5
+status: concluido
 criado_em: 2026-09-04
-atualizado_em: 2026-09-04
-concluido_em: null
+atualizado_em: 2026-09-05
+concluido_em: 2026-09-05
 sprints: [sprint-01]
 caminho_critico: [T-01.01, T-01.02, T-01.03, T-01.04]
 ---
@@ -101,3 +101,11 @@ O usuário relatou que **não consegue excluir usuários em Configurações** e 
 7. E4 QA em produção (pedir senha admin ao usuário) e E5 relatório.
 
 **Bloqueios vigentes:** B-01 (senha admin para QA), B-02 (deploy manual obrigatório — integração git Vercel aponta para repo renomeado).
+
+---
+
+### ENCERRAMENTO — 2026-09-05
+
+B-02 confirmado resolvido (ver `BLOQUEIOS.md`) — Render e Vercel respondendo 200 em produção após os fixes das ocorrências OC-2026-0003 e OC-2026-0004.
+
+O fix de exclusão de usuários (limpeza de FKs, guarda do último admin) e o `ConfirmDialog` aplicado em todas as telas destrutivas estão implementados, testados (suíte verde) e em produção desde o commit `c54e498`. O dono do produto autorizou o encerramento da ocorrência nesta data com base nessa evidência, **sem o E4 (QA funcional manual em produção) ter sido executado formalmente** — decisão dele, registrada aqui para histórico. Se qualquer problema na exclusão de usuários ou no ConfirmDialog aparecer depois, reabrir como nova ocorrência.
