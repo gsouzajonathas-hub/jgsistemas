@@ -75,7 +75,7 @@ Restaurar o deploy do frontend em produção: o `vercel.json` com os rewrites (`
 - [ ] O teste de regressão falhava antes do fix e passa agora.
 - [ ] A suíte inteira passa com `npm test` em `frontend/`.
 - [ ] Nenhum arquivo fora do escopo declarado foi alterado.
-- [ ] Após redeploy da Vercel (externo ao runx): `GET https://jgsistemas.dev.br/login` → 200 e `GET https://jgsistemas.dev.br/api/health` → 200.
+- [x] Após redeploy da Vercel (externo ao runx): `GET https://jgsistemas.dev.br/login` → 200 e `GET https://jgsistemas.dev.br/api/health` → 200. Validado em 2026-09-05 após `vercel --prod` (deploy `dpl_AQjWtNWmuR6S3NCvCZPv1434dzAQ`): login 200, health 200, `POST /api/auth/login` 401 (nunca mais 404).
 
 ## 8. Como retomar uma sessão interrompida
 

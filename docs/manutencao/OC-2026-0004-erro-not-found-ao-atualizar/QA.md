@@ -23,4 +23,8 @@
 ## Veredito
 
 - Mudanças do E2/E3 **aprovadas no ambiente local** (config, escopo e suíte validados).
-- Aprovação final da ocorrência condicionada à validação em produção após o redeploy da Vercel (item BAIXA acima).
+- **Validado em produção em 2026-09-05** após `vercel --prod` (deploy `dpl_AQjWtNWmuR6S3NCvCZPv1434dzAQ`, promovido manualmente por ausência de webhook GitHub↔Vercel — ver achado novo abaixo): `GET /login` → 200, `GET /api/health` → 200, `POST /api/auth/login` → 401 (nunca mais 404). Ocorrência **encerrada**.
+
+## Achado novo (fora do escopo desta OC)
+
+- **MÉDIA**: o repositório GitHub não tem webhook/integração com a Vercel (`gh api repos/.../hooks` retorna vazio, nenhum deployment registrado via API do GitHub) — pushes para `main` **não disparam deploy automático**. O deploy deste fix precisou ser feito manualmente via `vercel --prod` (token de conta). Recomenda-se reconectar a integração Git em Settings → Git do projeto Vercel para que próximos pushes deployem sozinhos.
