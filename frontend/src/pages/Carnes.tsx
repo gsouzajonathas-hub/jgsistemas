@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { carnesAPI, studentsAPI, enrollmentsAPI, financialAPI } from '../services/api';
 import { useSettings, parsePaymentMethods } from '../hooks/useSettings';
 import { Plus, Search, Eye, MoreVertical, FileText, Printer, XCircle, ChevronLeft, ChevronRight, DollarSign, CheckCircle, Clock, AlertTriangle, FileWarning, Printer as PrinterIcon } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Carnes() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function Carnes() {
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [stats, setStats] = useState<any>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [cancelCarneId, setCancelCarneId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -77,7 +79,6 @@ export default function Carnes() {
   const formatCurrency = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
   const handleCancel = async (id: number) => {
-    if (!confirm('Tem certeza que deseja cancelar este carnê?')) return;
     try {
       await carnesAPI.cancel(id);
       load();
@@ -314,7 +315,7 @@ export default function Carnes() {
                               </button>
                               {carneStatus !== 'cancelled' && (
                                 <button
-                                  onClick={() => handleCancel(c.id)}
+                                  onClick={() => { setCancelCarneId(c.id); setActiveMenu(null); setMenuPos(null); }}
                                   className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                                 >
                                   <XCircle className="w-4 h-4" /> Cancelar
@@ -371,6 +372,18 @@ export default function Carnes() {
 
       {detailCarne && (
         <CarneDetailModal carne={detailCarne} onClose={() => setDetailCarne(null)} onUpdated={() => { setDetailCarne(null); load(); }} />
+      )}
+
+      {cancelCarneId !== null && (
+        <ConfirmDialog
+          open
+          color="amber"
+          title="Cancelar carnê"
+          message="Tem certeza que deseja cancelar este carnê? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, cancelar"
+          onConfirm={() => { handleCancel(cancelCarneId); setCancelCarneId(null); }}
+          onCancel={() => setCancelCarneId(null)}
+        />
       )}
     </div>
   );

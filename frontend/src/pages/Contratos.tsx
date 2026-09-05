@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { contractsAPI } from '../services/api';
 import type { FinancialContract } from '../types';
 import { Eye, Download, FileSignature, Ban, Plus, CheckCircle2 } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const fmtBRL = (v: number) => `R$ ${Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (s?: string | null) => (s ? s.split('T')[0].split('-').reverse().join('/') : '—');
@@ -33,6 +34,7 @@ export default function Contratos() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [confirmAction, setConfirmAction] = useState<{ type: 'sign' | 'cancel'; contract: FinancialContract } | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -55,13 +57,11 @@ export default function Contratos() {
   });
 
   const handleSign = async (c: FinancialContract) => {
-    if (!confirm(`Marcar o contrato de ${c.student_name} como ASSINADO?`)) return;
     try { await contractsAPI.sign(c.id); load(); }
     catch (e: any) { alert(e.response?.data?.detail || 'Erro'); }
   };
 
   const handleCancel = async (c: FinancialContract) => {
-    if (!confirm(`Cancelar o contrato #${c.id} de ${c.student_name}? As parcelas geradas não serão excluídas.`)) return;
     try { await contractsAPI.cancel(c.id); load(); }
     catch (e: any) { alert(e.response?.data?.detail || 'Erro'); }
   };
@@ -146,10 +146,10 @@ export default function Contratos() {
                       </button>
                       {c.status === 'pending' && (
                         <>
-                          <button onClick={() => handleSign(c)} title="Marcar como assinado" className="p-2 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg text-slate-400 hover:text-green-600 mr-1">
+                          <button onClick={() => setConfirmAction({ type: 'sign', contract: c })} title="Marcar como assinado" className="p-2 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg text-slate-400 hover:text-green-600 mr-1">
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleCancel(c)} title="Cancelar contrato" className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-600">
+                          <button onClick={() => setConfirmAction({ type: 'cancel', contract: c })} title="Cancelar contrato" className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-600">
                             <Ban className="w-4 h-4" />
                           </button>
                         </>
@@ -162,6 +162,24 @@ export default function Contratos() {
           </table>
         )}
       </div>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open
+          color="amber"
+          title={confirmAction.type === 'sign' ? 'Assinar contrato' : 'Cancelar contrato'}
+          message={confirmAction.type === 'sign'
+            ? `Marcar o contrato de ${confirmAction.contract.student_name} como ASSINADO?`
+            : `Cancelar o contrato #${confirmAction.contract.id} de ${confirmAction.contract.student_name}? As parcelas geradas não serão excluídas.`}
+          confirmLabel={confirmAction.type === 'sign' ? 'Sim, assinar' : 'Sim, cancelar'}
+          onConfirm={() => {
+            if (confirmAction.type === 'sign') handleSign(confirmAction.contract);
+            else handleCancel(confirmAction.contract);
+            setConfirmAction(null);
+          }}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
   );
 }

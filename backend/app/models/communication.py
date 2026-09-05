@@ -11,7 +11,7 @@ class CommunicationLog(Base):
     recipient = Column(String(300), nullable=False)
     subject = Column(String(300))
     message = Column(Text, nullable=False)
-    sent_by = Column(Integer, ForeignKey("users.id"))
+    sent_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     status = Column(String(20), default="sent")
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

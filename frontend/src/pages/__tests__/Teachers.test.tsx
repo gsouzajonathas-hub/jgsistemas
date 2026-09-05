@@ -64,7 +64,7 @@ describe('Teachers', () => {
     mockListAll([{ id: 1, full_name: 'Ana Souza' }]);
     render(<Teachers />);
     fireEvent.click(await screen.findByRole('button', { name: 'Excluir professor' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sim' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir' }));
     await waitFor(() => {
       expect(teachersAPI.delete).toHaveBeenCalledWith(1);
     });

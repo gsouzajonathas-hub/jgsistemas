@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { coursesAPI } from '../services/api';
 import { Plus, Edit, Trash2, Clock } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface Course {
   id: number;
@@ -75,14 +76,7 @@ export default function Courses() {
                 </div>
                 <div className="flex gap-1">
                   <button aria-label="Editar curso" onClick={() => { setEditCourse(c); setShowModal(true); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg"><Edit className="w-4 h-4 text-slate-500" /></button>
-                  {deleteConfirm === c.id ? (
-                    <div className="flex gap-1">
-                      <button onClick={() => handleDelete(c.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">Sim</button>
-                      <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 rounded text-xs">Não</button>
-                    </div>
-                  ) : (
-                    <button aria-label="Excluir curso" onClick={() => setDeleteConfirm(c.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-4 h-4 text-red-500" /></button>
-                  )}
+                  <button aria-label="Excluir curso" onClick={() => setDeleteConfirm(c.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-4 h-4 text-red-500" /></button>
                 </div>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[2.5rem]">{c.description || 'Sem descrição'}</p>
@@ -96,6 +90,16 @@ export default function Courses() {
       )}
 
       {showModal && <CourseModal course={editCourse} onClose={() => { setShowModal(false); setEditCourse(null); }} onSaved={() => { setShowModal(false); setEditCourse(null); load(); }} />}
+      {deleteConfirm !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir curso"
+          message="Tem certeza que deseja excluir este curso? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

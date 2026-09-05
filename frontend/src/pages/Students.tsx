@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { studentsAPI } from '../services/api';
 import type { Student } from '../types';
 import { Plus, Search, Filter, Trash2, Eye, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -26,9 +27,8 @@ export default function Students() {
   useEffect(() => { loadStudents(); }, [page, search, statusFilter]);
 
   const handleDelete = async (id: number) => {
-    await studentsAPI.delete(id);
-    setDeleteConfirm(null);
-    loadStudents();
+    try { await studentsAPI.delete(id); loadStudents(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir aluno'); }
   };
 
   const statusLabels: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', transferred: 'Transferido', suspended: 'Suspenso', graduated: 'Formado' };
@@ -103,14 +103,7 @@ export default function Students() {
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => navigate(`/students/${s.id}`)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg" title="Ver perfil"><Eye className="w-4 h-4 text-slate-500" /></button>
                       <button onClick={() => { setEditStudent(s); setShowModal(true); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg" title="Editar"><Edit className="w-4 h-4 text-slate-500" /></button>
-                      {deleteConfirm === s.id ? (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleDelete(s.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">Sim</button>
-                          <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 rounded text-xs">Não</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setDeleteConfirm(s.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Excluir"><Trash2 className="w-4 h-4 text-red-500" /></button>
-                      )}
+                      <button onClick={() => setDeleteConfirm(s.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Excluir"><Trash2 className="w-4 h-4 text-red-500" /></button>
                     </div>
                   </td>
                 </tr>
@@ -133,6 +126,16 @@ export default function Students() {
       )}
 
       {showModal && <StudentModal student={editStudent} onClose={() => { setShowModal(false); setEditStudent(null); }} onSaved={() => { setShowModal(false); setEditStudent(null); loadStudents(); }} />}
+      {deleteConfirm !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir aluno"
+          message="Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

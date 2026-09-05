@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings';
 import type { Installment, TeachingMaterial, MaterialSale } from '../types';
 import { Plus, DollarSign, CheckCircle, Clock, AlertTriangle, CreditCard, Package, ShoppingCart, Trash2, Edit, BookOpen, FileText } from 'lucide-react';
 import { formatDate } from '../utils/format';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Financial() {
   const [tab, setTab] = useState<'installments' | 'materials' | 'sales'>('installments');
@@ -209,6 +210,7 @@ function MaterialsTab() {
   const [editMaterial, setEditMaterial] = useState<TeachingMaterial | null>(null);
   const [search, setSearch] = useState('');
   const [dashData, setDashData] = useState<any>(null);
+  const [deleteMaterialId, setDeleteMaterialId] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -219,9 +221,8 @@ function MaterialsTab() {
   useEffect(() => { load(); }, [search]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Excluir este material?')) return;
-    await materialsAPI.delete(id);
-    load();
+    try { await materialsAPI.delete(id); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir material'); }
   };
 
   const handleSell = (m: TeachingMaterial) => {
@@ -306,7 +307,7 @@ function MaterialsTab() {
                       <button onClick={() => { setEditMaterial(m); setShowModal('edit'); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg" title="Editar">
                         <Edit className="w-4 h-4 text-slate-500" />
                       </button>
-                      <button onClick={() => handleDelete(m.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Excluir">
+                      <button onClick={() => setDeleteMaterialId(m.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Excluir">
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
@@ -322,6 +323,17 @@ function MaterialsTab() {
       {showModal === 'new' && <MaterialModal onClose={() => setShowModal(null)} onSaved={() => { setShowModal(null); load(); }} />}
       {showModal === 'edit' && editMaterial && <MaterialModal material={editMaterial} onClose={() => { setShowModal(null); setEditMaterial(null); }} onSaved={() => { setShowModal(null); setEditMaterial(null); load(); }} />}
       {showModal === 'sale' && editMaterial && <SaleModal material={editMaterial} onClose={() => { setShowModal(null); setEditMaterial(null); }} onSaved={() => { setShowModal(null); setEditMaterial(null); load(); }} />}
+
+      {deleteMaterialId !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir material"
+          message="Tem certeza que deseja excluir este material? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deleteMaterialId); setDeleteMaterialId(null); }}
+          onCancel={() => setDeleteMaterialId(null)}
+        />
+      )}
     </div>
   );
 }

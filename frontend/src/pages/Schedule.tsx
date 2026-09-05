@@ -3,12 +3,14 @@ import { scheduleAPI } from '../services/api';
 import type { CalendarEvent } from '../types';
 import { Plus, Trash2, Calendar as CalIcon, GraduationCap, Users, FileText, PartyPopper, Sun } from 'lucide-react';
 import { formatDate } from '../utils/format';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Schedule() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [deleteEventId, setDeleteEventId] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -20,8 +22,8 @@ export default function Schedule() {
   useEffect(() => { load(); }, [currentMonth]);
 
   const handleDelete = async (id: number) => {
-    await scheduleAPI.delete(id);
-    load();
+    try { await scheduleAPI.delete(id); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir evento'); }
   };
 
   const typeConfig: Record<string, { icon: any; color: string; label: string }> = {
@@ -124,7 +126,7 @@ export default function Schedule() {
                       <p className="text-xs text-slate-500">{formatDate(e.date)} {e.start_time || ''}</p>
                     </div>
                   </div>
-                  <button onClick={() => handleDelete(e.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100">
+                  <button onClick={() => setDeleteEventId(e.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </button>
                 </div>
@@ -135,6 +137,17 @@ export default function Schedule() {
       )}
 
       {showModal && <EventModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
+
+      {deleteEventId !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir evento"
+          message="Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deleteEventId); setDeleteEventId(null); }}
+          onCancel={() => setDeleteEventId(null)}
+        />
+      )}
     </div>
   );
 }

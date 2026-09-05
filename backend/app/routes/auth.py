@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from pydantic import BaseModel, EmailStr
 from app.database import get_db
 from app.models.user import User
+from app.models.audit_log import AuditLog
+from app.models.communication import CommunicationLog
 from app.utils.auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, require_role, decode_token,
@@ -288,6 +290,34 @@ async def delete_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Guarda: nunca deixar o sistema sem um administrador ativo (D-05).
+    if user.role == "admin":
+        active_admin_count = (
+            await db.execute(
+                select(func.count(User.id)).where(
+                    User.role == "admin", User.is_active.is_(True)
+                )
+            )
+        ).scalar_one()
+        if active_admin_count <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Não é possível excluir o último administrador ativo",
+            )
+
+    # Limpeza de dependências (D-01): preserva trilha de auditoria e comunicacao
+    # em vez de apagar junto. Em bancos existentes (sem ondelete no schema),
+    # o UPDATE antes do DELETE evita o IntegrityError.
+    await db.execute(
+        update(AuditLog).where(AuditLog.user_id == user_id).values(user_id=None)
+    )
+    await db.execute(
+        update(CommunicationLog)
+        .where(CommunicationLog.sent_by == user_id)
+        .values(sent_by=None)
+    )
+
     await log_audit(db, current_user, "user.delete", "user", user_id,
                     f"email={user.email}", ip_address=client_ip(request))
     await db.delete(user)

@@ -63,7 +63,7 @@ describe('Courses', () => {
     mockList([{ id: 1, name: 'Inglês' }]);
     render(<Courses />);
     fireEvent.click(await screen.findByRole('button', { name: 'Excluir curso' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sim' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sim, excluir' }));
     await waitFor(() => {
       expect(coursesAPI.delete).toHaveBeenCalledWith(1);
     });

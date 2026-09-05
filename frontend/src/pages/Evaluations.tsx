@@ -3,6 +3,7 @@ import { evaluationsAPI, enrollmentsAPI, classesAPI, weightConfigAPI } from '../
 import type { Evaluation } from '../types';
 import { Plus, Trash2, Award, CheckCircle2, Users, ChevronRight, X } from 'lucide-react';
 import { formatDate } from '../utils/format';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const typeLabels: Record<string, string> = { prova: 'Prova', trabalho: 'Trabalho', speaking: 'Speaking', listening: 'Listening', reading: 'Reading', writing: 'Writing' };
 const typeColors: Record<string, string> = { prova: 'bg-red-100 text-red-700', trabalho: 'bg-blue-100 text-blue-700', speaking: 'bg-green-100 text-green-700', listening: 'bg-yellow-100 text-yellow-700', reading: 'bg-purple-100 text-purple-700', writing: 'bg-indigo-100 text-indigo-700' };
@@ -18,6 +19,7 @@ export default function Evaluations() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassEvalGroup | null>(null);
+  const [deleteEvalId, setDeleteEvalId] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -27,9 +29,8 @@ export default function Evaluations() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Excluir esta avaliação?')) return;
-    await evaluationsAPI.delete(id);
-    load();
+    try { await evaluationsAPI.delete(id); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir avaliação'); }
   };
 
   const groups = evals.reduce<Record<number, ClassEvalGroup>>((acc, e) => {
@@ -103,8 +104,19 @@ export default function Evaluations() {
       )}
 
       {showModal && <EvalModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
-      {selectedClass && (
-        <EvalClassModal title={selectedClass.name} items={selectedClass.items} onClose={() => setSelectedClass(null)} onDelete={handleDelete} />
+{selectedClass && (
+        <EvalClassModal title={selectedClass.name} items={selectedClass.items} onClose={() => setSelectedClass(null)} onDelete={(id) => setDeleteEvalId(id)} />
+      )}
+
+      {deleteEvalId !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir avaliação"
+          message="Tem certeza que deseja excluir esta avaliação? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deleteEvalId); setDeleteEvalId(null); }}
+          onCancel={() => setDeleteEvalId(null)}
+        />
       )}
     </div>
   );

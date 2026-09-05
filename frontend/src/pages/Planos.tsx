@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { plansAPI, coursesAPI, studentsAPI, contractsAPI } from '../services/api';
 import type { CoursePlan, ContractResult, PlanCalc, Student } from '../types';
 import { Plus, Pencil, Trash2, Package, UserPlus, Power, FileText } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const fmtBRL = (v: number) => `R$ ${Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -56,6 +57,7 @@ export default function Planos() {
   const [editing, setEditing] = useState<CoursePlan | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [contracting, setContracting] = useState<CoursePlan | null>(null);
+  const [deletePlan, setDeletePlan] = useState<CoursePlan | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -67,7 +69,6 @@ export default function Planos() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (p: CoursePlan) => {
-    if (!confirm(`Excluir o plano "${p.name}"?`)) return;
     try { await plansAPI.delete(p.id); load(); }
     catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir plano'); }
   };
@@ -150,7 +151,7 @@ export default function Planos() {
                     <button onClick={() => { setEditing(p); setShowModal(true); }} title="Editar" className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-primary-600 mr-1">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(p)} title="Excluir" className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-600 mr-1">
+                    <button onClick={() => setDeletePlan(p)} title="Excluir" className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-600 mr-1">
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <button onClick={() => toggleActive(p)} title={p.is_active ? 'Desativar' : 'Ativar'} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-amber-600">
@@ -178,6 +179,17 @@ export default function Planos() {
           plan={contracting}
           onClose={() => setContracting(null)}
           onDone={() => { setContracting(null); }}
+        />
+      )}
+
+      {deletePlan && (
+        <ConfirmDialog
+          open
+          title="Excluir plano"
+          message={`Excluir o plano "${deletePlan.name}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Sim, excluir"
+          onConfirm={() => { handleDelete(deletePlan); setDeletePlan(null); }}
+          onCancel={() => setDeletePlan(null)}
         />
       )}
     </div>

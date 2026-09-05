@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { settingsAPI, authAPI, backupAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { pushSettingsCache } from '../hooks/useSettings';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { Save, Upload, Building, Palette, Users, Plus, X, Download } from 'lucide-react';
 
 const PAYMENT_METHOD_OPTIONS = ['PIX', 'Dinheiro', 'Débito', 'Crédito', 'Cartão', 'Transferência'];
@@ -47,6 +48,7 @@ export default function Settings() {
   const [form, setForm] = useState<UserForm>(emptyForm);
   const [formError, setFormError] = useState('');
   const [formSaving, setFormSaving] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
 
   useEffect(() => {
     settingsAPI.get().then(({ data }) => setSettings(data)).finally(() => setLoading(false));
@@ -83,9 +85,14 @@ export default function Settings() {
   };
 
   const handleDeleteUser = async (id: number) => {
-    if (!confirm('Excluir este usuário?')) return;
-    await authAPI.deleteUser(id);
-    setUsers(u => u.filter(user => user.id !== id));
+    try {
+      await authAPI.deleteUser(id);
+      setUsers(u => u.filter(user => user.id !== id));
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Erro ao excluir o usuário. Tente novamente.');
+    } finally {
+      setDeleteUserId(null);
+    }
   };
 
   const handleBackup = async () => {
@@ -343,7 +350,7 @@ export default function Settings() {
                   <td className="px-4 py-3 text-right space-x-3">
                     <button onClick={() => openEditModal(u)} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 text-sm">Editar</button>
                     {u.id !== user?.id && (
-                      <button onClick={() => handleDeleteUser(u.id)} className="text-red-500 hover:text-red-700 text-sm">Excluir</button>
+                      <button onClick={() => setDeleteUserId(u.id)} className="text-red-500 hover:text-red-700 text-sm">Excluir</button>
                     )}
                   </td>
                 </tr>
@@ -452,6 +459,16 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      )}
+    {deleteUserId !== null && (
+        <ConfirmDialog
+          open
+          title="Excluir usuário"
+          message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
+          confirmLabel="Sim, excluir"
+          onConfirm={() => handleDeleteUser(deleteUserId)}
+          onCancel={() => setDeleteUserId(null)}
+        />
       )}
     </div>
   );
