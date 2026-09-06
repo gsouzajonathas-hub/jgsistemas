@@ -4,7 +4,7 @@ from sqlalchemy import select, func
 from app.database import get_db
 from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.utils.auth import require_role
+from app.utils.permissions import require_permission
 
 router = APIRouter()
 
@@ -13,7 +13,7 @@ router = APIRouter()
 async def list_audit(
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(require_role("admin")),
+    current_user: User = Depends(require_permission("audit")),
     db: AsyncSession = Depends(get_db),
 ):
     total = await db.execute(select(func.count()).select_from(AuditLog))

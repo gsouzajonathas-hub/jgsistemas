@@ -7,7 +7,7 @@ from typing import Optional
 from datetime import date
 from app.database import get_db
 from app.models.materials import TeachingMaterial, MaterialSale
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 
 router = APIRouter()
 
@@ -31,7 +31,7 @@ class MaterialSaleSchema(BaseModel):
 
 @router.get("")
 async def list_materials(search: str = "", category: str = "",
-                         current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                         current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     q = select(TeachingMaterial)
     if search:
         q = q.where(TeachingMaterial.name.ilike(f"%{search}%"))
@@ -50,7 +50,7 @@ async def list_materials(search: str = "", category: str = "",
 
 @router.get("/sales")
 async def list_sales(student_id: int = None, material_id: int = None, skip: int = 0, limit: int = 50,
-                     current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                     current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     q = select(MaterialSale)
     if student_id:
         q = q.where(MaterialSale.student_id == student_id)
@@ -95,7 +95,7 @@ async def list_sales(student_id: int = None, material_id: int = None, skip: int 
 
 
 @router.get("/dashboard")
-async def materials_dashboard(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def materials_dashboard(current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     total_materials = await db.execute(select(func.count()).select_from(TeachingMaterial))
     total_sales = await db.execute(select(func.count()).select_from(MaterialSale))
     total_revenue = await db.execute(select(func.sum(MaterialSale.total_price)))
@@ -112,7 +112,7 @@ async def materials_dashboard(current_user=Depends(get_current_user), db: AsyncS
 
 
 @router.post("")
-async def create_material(data: MaterialSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_material(data: MaterialSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     material = TeachingMaterial(**data.model_dump())
     db.add(material)
     await db.commit()
@@ -121,7 +121,7 @@ async def create_material(data: MaterialSchema, current_user=Depends(require_rol
 
 
 @router.post("/sales")
-async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TeachingMaterial).where(TeachingMaterial.id == data.material_id))
     material = result.scalar_one_or_none()
     if not material:
@@ -149,7 +149,7 @@ async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_rol
 
 
 @router.put("/{material_id}")
-async def update_material(material_id: int, data: MaterialSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def update_material(material_id: int, data: MaterialSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TeachingMaterial).where(TeachingMaterial.id == material_id))
     material = result.scalar_one_or_none()
     if not material:
@@ -161,7 +161,7 @@ async def update_material(material_id: int, data: MaterialSchema, current_user=D
 
 
 @router.delete("/{material_id}")
-async def delete_material(material_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_material(material_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(TeachingMaterial).where(TeachingMaterial.id == material_id))
     material = result.scalar_one_or_none()
     if not material:
@@ -181,7 +181,7 @@ async def delete_material(material_id: int, current_user=Depends(require_role("a
 
 
 @router.get("/sales/{sale_id}/receipt")
-async def material_receipt(sale_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def material_receipt(sale_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MaterialSale).where(MaterialSale.id == sale_id))
     sale = result.scalar_one_or_none()
     if not sale:

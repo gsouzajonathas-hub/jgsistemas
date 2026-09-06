@@ -11,7 +11,7 @@ from app.models.attendance import Attendance
 from app.models.evaluation import Evaluation
 from app.models.certificate import Certificate
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from datetime import date
 
 router = APIRouter()
@@ -129,7 +129,7 @@ async def _student_class_block(student_id: int, cg, db: AsyncSession, course_inf
 
 
 @router.get("/students")
-async def list_students(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_students(current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Student).order_by(Student.full_name))
     students = result.scalars().all()
     return [{
@@ -139,7 +139,7 @@ async def list_students(current_user=Depends(get_current_user), db: AsyncSession
 
 
 @router.get("/{student_id}")
-async def get_boletim(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_boletim(student_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Student).where(Student.id == student_id))
     student = result.scalar_one_or_none()
     if not student:
@@ -210,7 +210,7 @@ async def get_boletim(student_id: int, current_user=Depends(get_current_user), d
 
 
 @router.get("/turma/{class_group_id}")
-async def get_turma_boletim(class_group_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_turma_boletim(class_group_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     cg_result = await db.execute(select(ClassGroup).where(ClassGroup.id == class_group_id))
     cg = cg_result.scalar_one_or_none()
     if not cg:
@@ -360,7 +360,7 @@ _SITUATION_COLORS = {
 
 
 @router.get("/{student_id}/pdf")
-async def boletim_pdf(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def boletim_pdf(student_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageTemplate, Frame
@@ -519,7 +519,7 @@ async def boletim_pdf(student_id: int, current_user=Depends(get_current_user), d
 
 
 @router.get("/turma/{class_group_id}/pdf")
-async def turma_boletim_pdf(class_group_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def turma_boletim_pdf(class_group_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageTemplate, Frame
@@ -669,7 +669,7 @@ async def turma_boletim_pdf(class_group_id: int, current_user=Depends(get_curren
 
 
 @router.get("/{student_id}/excel")
-async def boletim_excel(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def boletim_excel(student_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     import openpyxl
     from fastapi.responses import StreamingResponse
     import io
@@ -711,7 +711,7 @@ async def boletim_excel(student_id: int, current_user=Depends(get_current_user),
 
 
 @router.get("/turma/{class_group_id}/excel")
-async def turma_boletim_excel(class_group_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def turma_boletim_excel(class_group_id: int, current_user=Depends(require_permission("boletins")), db: AsyncSession = Depends(get_db)):
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment
     from fastapi.responses import StreamingResponse

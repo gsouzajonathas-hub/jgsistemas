@@ -4,7 +4,8 @@ from sqlalchemy import select
 from pydantic import BaseModel
 from app.database import get_db
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user, require_role
+from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from app.utils.uploads import validate_and_save, IMAGE_EXTENSIONS
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
@@ -52,7 +53,7 @@ async def get_settings(current_user=Depends(get_current_user), db: AsyncSession 
 
 
 @router.put("")
-async def update_settings(data: SettingsSchema, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def update_settings(data: SettingsSchema, request: Request, current_user=Depends(require_permission("settings")), db: AsyncSession = Depends(get_db)):
     s = await _get_settings(db)
     for k, v in data.model_dump().items():
         setattr(s, k, v)
@@ -63,7 +64,7 @@ async def update_settings(data: SettingsSchema, request: Request, current_user=D
 
 
 @router.post("/logo")
-async def upload_logo(request: Request, file: UploadFile = File(...), current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def upload_logo(request: Request, file: UploadFile = File(...), current_user=Depends(require_permission("settings")), db: AsyncSession = Depends(get_db)):
     filename, content = await validate_and_save(file, allowed_exts=IMAGE_EXTENSIONS)
     ref = storage.save_bytes(storage.BUCKET_LOGOS, filename, content,
                              content_type=file.content_type or "image/png")

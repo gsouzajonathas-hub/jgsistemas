@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from app.database import get_db
 from app.models.evaluation import Evaluation
-from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
 
@@ -42,7 +42,7 @@ class EvalBulkSchema(BaseModel):
 
 @router.get("")
 async def list_evaluations(student_id: int = None, class_group_id: int = None,
-                           current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                           current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     q = select(Evaluation)
     if student_id:
         q = q.where(Evaluation.student_id == student_id)
@@ -74,7 +74,7 @@ async def list_evaluations(student_id: int = None, class_group_id: int = None,
 
 
 @router.post("")
-async def create_evaluation(data: EvalSchema, request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_evaluation(data: EvalSchema, request: Request, current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     from datetime import date
     d = data.model_dump()
     if d.get("date"):
@@ -92,7 +92,7 @@ async def create_evaluation(data: EvalSchema, request: Request, current_user=Dep
 
 
 @router.post("/bulk")
-async def create_evaluations_bulk(data: EvalBulkSchema, request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_evaluations_bulk(data: EvalBulkSchema, request: Request, current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     from datetime import date
     eval_date = date.fromisoformat(data.date) if data.date else date.today()
     created = 0
@@ -118,7 +118,7 @@ async def create_evaluations_bulk(data: EvalBulkSchema, request: Request, curren
 
 
 @router.put("/{eval_id}")
-async def update_evaluation(eval_id: int, data: EvalSchema, request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def update_evaluation(eval_id: int, data: EvalSchema, request: Request, current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Evaluation).where(Evaluation.id == eval_id))
     evaluation = result.scalar_one_or_none()
     if not evaluation:
@@ -139,7 +139,7 @@ async def update_evaluation(eval_id: int, data: EvalSchema, request: Request, cu
 
 
 @router.delete("/{eval_id}")
-async def delete_evaluation(eval_id: int, request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_evaluation(eval_id: int, request: Request, current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Evaluation).where(Evaluation.id == eval_id))
     evaluation = result.scalar_one_or_none()
     if not evaluation:
@@ -153,7 +153,7 @@ async def delete_evaluation(eval_id: int, request: Request, current_user=Depends
 
 
 @router.get("/average/{student_id}")
-async def student_average(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def student_average(student_id: int, current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Evaluation).where(Evaluation.student_id == student_id)
     )

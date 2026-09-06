@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.schedule import CalendarEvent
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.audit import log_audit
 
 router = APIRouter()
@@ -23,7 +23,7 @@ class EventSchema(BaseModel):
 
 @router.get("")
 async def list_events(month: int = None, year: int = None,
-                      current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                      current_user=Depends(require_permission("schedule")), db: AsyncSession = Depends(get_db)):
     q = select(CalendarEvent)
     if month and year:
         from datetime import date
@@ -43,7 +43,7 @@ async def list_events(month: int = None, year: int = None,
 
 
 @router.post("")
-async def create_event(data: EventSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_event(data: EventSchema, current_user=Depends(require_permission("schedule")), db: AsyncSession = Depends(get_db)):
     from datetime import date, time as t
     d = data.model_dump()
     if d.get("date"):
@@ -67,7 +67,7 @@ async def create_event(data: EventSchema, current_user=Depends(require_role("adm
 
 
 @router.delete("/{event_id}")
-async def delete_event(event_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_event(event_id: int, current_user=Depends(require_permission("schedule")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CalendarEvent).where(CalendarEvent.id == event_id))
     event = result.scalar_one_or_none()
     if not event:

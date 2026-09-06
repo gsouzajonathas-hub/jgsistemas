@@ -38,8 +38,8 @@ async def user_com_historico(db_session):
     return u
 
 
-async def test_delete_usuario_com_historico(client, auth_headers, user_com_historico):
-    resp = client.delete(f"/api/auth/users/{user_com_historico.id}", headers=auth_headers)
+async def test_delete_usuario_com_historico(client, super_admin_headers, user_com_historico):
+    resp = client.delete(f"/api/auth/users/{user_com_historico.id}", headers=super_admin_headers)
     assert resp.status_code == 200, resp.text
     async with async_session() as s:
         restante = (

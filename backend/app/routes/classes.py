@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.class_group import ClassGroup
 from app.models.teacher import Teacher
 from app.models.course import Course
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
 
@@ -41,7 +41,7 @@ def _class_to_dict(c, teacher_name="", course_name="") -> dict:
 
 
 @router.get("")
-async def list_classes(skip: int = 0, limit: int = 50, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_classes(skip: int = 0, limit: int = 50, current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ClassGroup).order_by(ClassGroup.name).offset(skip).limit(limit))
     classes = result.scalars().all()
 
@@ -62,7 +62,7 @@ async def list_classes(skip: int = 0, limit: int = 50, current_user=Depends(get_
 
 
 @router.post("")
-async def create_class(class_data: ClassSchema, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_class(class_data: ClassSchema, request: Request, current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     data = class_data.model_dump()
     from datetime import time
     data["start_time"] = time.fromisoformat(data["start_time"]) if data.get("start_time") else time(8, 0)
@@ -79,7 +79,7 @@ async def create_class(class_data: ClassSchema, request: Request, current_user=D
 
 
 @router.put("/{class_id}")
-async def update_class(class_id: int, class_data: ClassSchema, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def update_class(class_id: int, class_data: ClassSchema, request: Request, current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ClassGroup).where(ClassGroup.id == class_id))
     cg = result.scalar_one_or_none()
     if not cg:
@@ -98,7 +98,7 @@ async def update_class(class_id: int, class_data: ClassSchema, request: Request,
 
 
 @router.delete("/{class_id}")
-async def delete_class(class_id: int, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_class(class_id: int, request: Request, current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ClassGroup).where(ClassGroup.id == class_id))
     cg = result.scalar_one_or_none()
     if not cg:
@@ -112,7 +112,7 @@ async def delete_class(class_id: int, request: Request, current_user=Depends(req
 
 
 @router.get("/count")
-async def count_classes(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def count_classes(current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     from sqlalchemy import func
     result = await db.execute(select(func.count()).select_from(ClassGroup))
     return {"count": result.scalar()}

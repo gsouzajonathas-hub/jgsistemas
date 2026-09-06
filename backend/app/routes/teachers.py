@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.teacher import Teacher
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.audit import log_audit
 
 router = APIRouter()
@@ -24,13 +24,13 @@ class TeacherSchema(BaseModel):
 
 
 @router.get("")
-async def list_teachers(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_teachers(current_user=Depends(require_permission("teachers")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Teacher).where(Teacher.is_active == True).order_by(Teacher.full_name))  # noqa: E712
     return [{"id": t.id, "full_name": t.full_name} for t in result.scalars().all()]
 
 
 @router.get("/all")
-async def list_all_teachers(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_all_teachers(current_user=Depends(require_permission("teachers")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Teacher).order_by(Teacher.full_name))
     return [{
         "id": t.id, "full_name": t.full_name, "cpf": t.cpf or "", "phone": t.phone or "",
@@ -42,7 +42,7 @@ async def list_all_teachers(current_user=Depends(get_current_user), db: AsyncSes
 
 @router.post("")
 async def create_teacher(data: TeacherSchema, request: Request,
-                         current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                         current_user=Depends(require_permission("teachers")), db: AsyncSession = Depends(get_db)):
     if not data.full_name.strip():
         raise HTTPException(status_code=400, detail="Nome do professor é obrigatório")
     if data.cpf:
@@ -61,7 +61,7 @@ async def create_teacher(data: TeacherSchema, request: Request,
 
 @router.put("/{teacher_id}")
 async def update_teacher(teacher_id: int, data: TeacherSchema, request: Request,
-                         current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                         current_user=Depends(require_permission("teachers")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Teacher).where(Teacher.id == teacher_id))
     teacher = result.scalar_one_or_none()
     if not teacher:
@@ -82,7 +82,7 @@ async def update_teacher(teacher_id: int, data: TeacherSchema, request: Request,
 
 @router.delete("/{teacher_id}")
 async def delete_teacher(teacher_id: int, request: Request,
-                         current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                         current_user=Depends(require_permission("teachers")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Teacher).where(Teacher.id == teacher_id))
     teacher = result.scalar_one_or_none()
     if not teacher:

@@ -11,7 +11,7 @@ from app.models.class_group import ClassGroup
 from app.models.teacher import Teacher
 from app.models.course import Course
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.routes.boletins import get_boletim
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
@@ -37,7 +37,7 @@ def _next_level(current: str) -> str:
 
 
 @router.get("")
-async def list_certificates(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_certificates(current_user=Depends(require_permission("certificates")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Certificate).order_by(Certificate.issue_date.desc()))
     certs = result.scalars().all()
 
@@ -61,7 +61,7 @@ async def list_certificates(current_user=Depends(get_current_user), db: AsyncSes
 
 
 @router.get("/student/{student_id}")
-async def list_student_certificates(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_student_certificates(student_id: int, current_user=Depends(require_permission("certificates")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Certificate).where(Certificate.student_id == student_id).order_by(Certificate.issue_date.desc())
     )
@@ -77,7 +77,7 @@ async def list_student_certificates(student_id: int, current_user=Depends(get_cu
 
 
 @router.post("")
-async def issue_certificate(data: CertificateSchema, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def issue_certificate(data: CertificateSchema, request: Request, current_user=Depends(require_permission("certificates")), db: AsyncSession = Depends(get_db)):
     boletim = await get_boletim(data.student_id, current_user, db)
     if not isinstance(boletim, dict) or "classes" not in boletim:
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
@@ -153,7 +153,7 @@ async def issue_certificate(data: CertificateSchema, request: Request, current_u
 
 
 @router.get("/{certificate_id}/pdf")
-async def certificate_pdf(certificate_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def certificate_pdf(certificate_id: int, current_user=Depends(require_permission("certificates")), db: AsyncSession = Depends(get_db)):
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageTemplate, Frame

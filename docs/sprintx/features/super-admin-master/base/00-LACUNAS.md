@@ -1,0 +1,4 @@
+# Lacunas
+
+- Não há documentação ou teste que afirme o comportamento esperado de `permissions` em rotas de LEITURA de todos os módulos — a amostra verificada (financial.py) não checa role nem permissão em nenhuma rota GET; não foi lida a íntegra de todas as rotas de todos os módulos (estudantes, turmas, avaliações, etc.) uma a uma, então "nenhuma rota GET valida permissão" é generalizado a partir de uma amostra ampla (grep de `require_role` em `backend/app/routes/*.py` não retornou nenhuma rota GET), não de leitura exaustiva de cada arquivo.
+- NÃO DOCUMENTADO: se existe algum teste de frontend ou backend que hoje cobre o cenário "secretary sem permissão X chama a API de X diretamente" — procurado por `grep -rn "permission" backend/tests/` sem retorno relevante além dos testes de `test_super_admin.py` já citados.

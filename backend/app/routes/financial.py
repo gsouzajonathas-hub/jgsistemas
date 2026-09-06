@@ -12,7 +12,7 @@ from app.database import get_db
 from app.models.financial import FinancialPlan, FinancialContract, Installment, Payment, Discount
 from app.models.student import Student
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.constants import effective_installment_status
 from app.services.receipt_service import build_receipt_pdf
 
@@ -124,7 +124,7 @@ def _plan_dict(p, course_name: str = "") -> dict:
 
 
 @router.get("/plans")
-async def list_plans(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_plans(current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.models.course import Course
     result = await db.execute(select(FinancialPlan).order_by(FinancialPlan.name))
     plans = result.scalars().all()
@@ -137,7 +137,7 @@ async def list_plans(current_user=Depends(get_current_user), db: AsyncSession = 
 
 
 @router.post("/plans")
-async def create_plan(data: PlanSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_plan(data: PlanSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     if data.duration_months < 1:
         raise HTTPException(status_code=400, detail="Duração deve ser de pelo menos 1 mês")
     if data.installments < 1:
@@ -150,7 +150,7 @@ async def create_plan(data: PlanSchema, current_user=Depends(require_role("admin
 
 
 @router.put("/plans/{plan_id}")
-async def update_plan(plan_id: int, data: PlanSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def update_plan(plan_id: int, data: PlanSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FinancialPlan).where(FinancialPlan.id == plan_id))
     plan = result.scalar_one_or_none()
     if not plan:
@@ -162,7 +162,7 @@ async def update_plan(plan_id: int, data: PlanSchema, current_user=Depends(requi
 
 
 @router.delete("/plans/{plan_id}")
-async def delete_plan(plan_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_plan(plan_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(FinancialPlan).where(FinancialPlan.id == plan_id))
     plan = result.scalar_one_or_none()
     if not plan:
@@ -179,7 +179,7 @@ async def delete_plan(plan_id: int, current_user=Depends(require_role("admin", "
 
 
 @router.post("/plans/{plan_id}/toggle")
-async def toggle_plan(plan_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def toggle_plan(plan_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.utils.audit import log_audit
     result = await db.execute(select(FinancialPlan).where(FinancialPlan.id == plan_id))
     plan = result.scalar_one_or_none()
@@ -193,7 +193,7 @@ async def toggle_plan(plan_id: int, current_user=Depends(require_role("admin", "
 
 
 @router.post("/plans/{plan_id}/contract")
-async def contract_plan(plan_id: int, data: ContractSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def contract_plan(plan_id: int, data: ContractSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.utils.audit import log_audit
     stu_r = await db.execute(select(Student).where(Student.id == data.student_id))
     student = stu_r.scalar_one_or_none()
@@ -293,7 +293,7 @@ async def contract_plan(plan_id: int, data: ContractSchema, current_user=Depends
 
 
 @router.get("/contracts")
-async def list_contracts(status: str = "", current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_contracts(status: str = "", current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.models.course import Course
     q = select(FinancialContract).order_by(FinancialContract.created_at.desc())
     if status:
@@ -335,7 +335,7 @@ async def list_contracts(status: str = "", current_user=Depends(get_current_user
 
 
 @router.post("/contracts/{contract_id}/sign")
-async def sign_contract(contract_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def sign_contract(contract_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.utils.audit import log_audit
     ct = (await db.execute(select(FinancialContract).where(FinancialContract.id == contract_id))).scalar_one_or_none()
     if not ct:
@@ -348,7 +348,7 @@ async def sign_contract(contract_id: int, current_user=Depends(require_role("adm
 
 
 @router.post("/contracts/{contract_id}/cancel")
-async def cancel_contract(contract_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def cancel_contract(contract_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.utils.audit import log_audit
     ct = (await db.execute(select(FinancialContract).where(FinancialContract.id == contract_id))).scalar_one_or_none()
     if not ct:
@@ -365,7 +365,7 @@ def _contract_duration(ct: FinancialContract) -> int:
 
 
 @router.get("/contracts/{contract_id}/pdf")
-async def contract_pdf(contract_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def contract_pdf(contract_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.services.contract_service import build_contract_pdf
     from app.models.settings import SchoolSettings
     from app.services.receipt_service import _school_logo
@@ -432,7 +432,7 @@ async def contract_pdf(contract_id: int, current_user=Depends(get_current_user),
 @router.get("/installments")
 async def list_installments(student_id: int = None, status: str = "", month: str = "",
                             skip: int = 0, limit: int = 50,
-                            current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                            current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     today = date.today()
     q = select(Installment)
     if student_id:
@@ -490,7 +490,7 @@ async def list_installments(student_id: int = None, status: str = "", month: str
 
 
 @router.post("/generate-month")
-async def generate_month(data: GenerateMonthSchema, current_user=Depends(require_role("admin", "secretary")),
+async def generate_month(data: GenerateMonthSchema, current_user=Depends(require_permission("financial")),
                          db: AsyncSession = Depends(get_db)):
     y, m = int(data.month[:4]), int(data.month[5:7])
     last_day = _last_day_of_month(y, m)
@@ -533,7 +533,7 @@ async def generate_month(data: GenerateMonthSchema, current_user=Depends(require
 
 
 @router.post("/installments")
-async def create_installment(data: InstallmentSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_installment(data: InstallmentSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     student_result = await db.execute(select(Student).where(Student.id == data.student_id))
     if not student_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
@@ -549,7 +549,7 @@ async def create_installment(data: InstallmentSchema, current_user=Depends(requi
 
 
 @router.post("/payments")
-async def register_payment(data: PaymentSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def register_payment(data: PaymentSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Installment).where(Installment.id == data.installment_id))
     installment = result.scalar_one_or_none()
     if not installment:
@@ -588,7 +588,7 @@ async def register_payment(data: PaymentSchema, current_user=Depends(require_rol
 
 
 @router.get("/payments/{payment_id}/receipt")
-async def payment_receipt(payment_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def payment_receipt(payment_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Payment).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if not payment:
@@ -620,7 +620,7 @@ async def payment_receipt(payment_id: int, current_user=Depends(get_current_user
 
 
 @router.get("/dashboard")
-async def financial_dashboard(month: str = "", current_user=Depends(get_current_user),
+async def financial_dashboard(month: str = "", current_user=Depends(require_permission("financial")),
                               db: AsyncSession = Depends(get_db)):
     today = date.today()
     if not month:
@@ -678,7 +678,7 @@ async def financial_dashboard(month: str = "", current_user=Depends(get_current_
 
 
 @router.post("/discounts")
-async def create_discount(data: DiscountSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_discount(data: DiscountSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     d = data.model_dump()
     if d.get("valid_until"):
         d["valid_until"] = date.fromisoformat(d["valid_until"])

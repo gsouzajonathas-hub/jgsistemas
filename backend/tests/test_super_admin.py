@@ -154,45 +154,58 @@ async def test_super_admin_deleta_usuario(client, db_session, auth_headers, supe
     assert resp.status_code == 200, resp.text
 
 
-async def test_rebaixamento_de_super_admin_bloqueado(client, db_session, auth_headers, super_admin_user):
-    # Admin tenta rebaixar o super admin via PUT /users/{id}
+async def test_rebaixamento_de_super_admin_bloqueado(client, db_session, super_admin_headers, super_admin_user):
+    # super-admin-master D-01: gestao de usuarios e exclusiva do super_admin, entao e ele mesmo
+    # quem tenta (e a trava especifica de rebaixamento continua bloqueando mesmo assim).
     resp = client.put(
         f"/api/auth/users/{super_admin_user.id}",
         json={"role": "secretary"},
-        headers=auth_headers,
+        headers=super_admin_headers,
     )
     assert resp.status_code in (400, 422), resp.text
 
 
-async def test_exclusao_de_super_admin_bloqueada(client, db_session, auth_headers, super_admin_user):
-    # Guarda da auditoria (00-AUDITORIA.md, MÉDIA): DELETE /users/{id} não pode excluir a conta de suporte
+async def test_exclusao_de_super_admin_bloqueada(client, db_session, super_admin_headers, super_admin_user):
+    # Guarda da auditoria (00-AUDITORIA.md, MÉDIA): DELETE /users/{id} não pode excluir a conta de
+    # suporte. Usa uma SEGUNDA conta super_admin como alvo (nao a de super_admin_headers) para nao
+    # cair na checagem de auto-exclusao, que e' um caminho de codigo diferente (super-admin-master).
+    outro_super_admin = User(
+        name="Outro Suporte",
+        email="outro-suporte@teste.local",
+        password_hash=hash_password("senha-super-456"),
+        role="super_admin",
+        is_active=True,
+    )
+    db_session.add(outro_super_admin)
+    await db_session.commit()
+    await db_session.refresh(outro_super_admin)
+
     resp = client.delete(
-        f"/api/auth/users/{super_admin_user.id}",
-        headers=auth_headers,
+        f"/api/auth/users/{outro_super_admin.id}",
+        headers=super_admin_headers,
     )
     assert resp.status_code == 400, resp.text
     assert "suporte" in resp.json()["detail"].lower() or "super admin" in resp.json()["detail"].lower()
 
     # A conta continua existindo e ativa
     row = (await db_session.execute(
-        select(User).where(User.id == super_admin_user.id)
+        select(User).where(User.id == outro_super_admin.id)
     )).scalar_one()
     assert row is not None
     assert row.is_active is True
-    await db_session.refresh(super_admin_user)
-    assert super_admin_user.role == "super_admin"
+    assert row.role == "super_admin"
 
 
-def test_register_nunca_cria_super_admin(client, auth_headers):
+def test_register_nunca_cria_super_admin(client, super_admin_headers):
     # Whitelist existente (L155): "super_admin" vira "secretary"; ninguém cria via API.
     resp = client.post(
         "/api/auth/register",
         json={"name": "Intruso", "email": "intruso-super@example.com",
               "password": "senha-forte-123", "role": "super_admin"},
-        headers=auth_headers,
+        headers={**super_admin_headers, "X-Forwarded-For": "10.0.9.3"},
     )
     assert resp.status_code in (200, 400), resp.text
-    users = client.get("/api/auth/users", headers=auth_headers).json()
+    users = client.get("/api/auth/users", headers=super_admin_headers).json()
     assert all(u["email"] != "intruso-super@example.com" or u["role"] != "super_admin" for u in users)
 
 

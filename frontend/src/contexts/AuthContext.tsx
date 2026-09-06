@@ -52,8 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    // Super admin (D-08): acesso total, mesma regra do admin.
-    if (user.role === 'admin' || user.role === 'super_admin') return true;
+    // super-admin-master (D-02): so super_admin tem bypass automatico. Admin comum passa a
+    // ser regulado por permissions, igual secretary/teacher.
+    if (user.role === 'super_admin') return true;
     if (!user.permissions || user.permissions.length === 0) return false;
     return user.permissions.includes(permission);
   };

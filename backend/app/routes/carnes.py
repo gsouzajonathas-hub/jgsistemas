@@ -16,7 +16,7 @@ from app.models.class_group import ClassGroup
 from app.models.course import Course
 from app.models.teacher import Teacher
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.constants import effective_installment_status
 from app.utils.audit import log_audit
 from app.utils.security import client_ip
@@ -118,7 +118,7 @@ async def list_carnets(
     search: str = "", status: str = "", month: str = "",
     student_id: int = None, course_id: int = None,
     skip: int = 0, limit: int = 50,
-    current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)
 ):
     today = date.today()
     q = select(Carne).options(selectinload(Carne.student))
@@ -227,7 +227,7 @@ async def list_carnets(
 
 
 @router.get("/stats")
-async def carnet_stats(month: str = "", current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def carnet_stats(month: str = "", current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     today = date.today()
     if not month:
         month = f"{today.year:04d}-{today.month:02d}"
@@ -264,7 +264,7 @@ async def carnet_stats(month: str = "", current_user=Depends(get_current_user), 
 
 
 @router.get("/{carnet_id}/pdf")
-async def carnet_pdf(carnet_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def carnet_pdf(carnet_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from app.services.carne_service import build_carne_pdf
 
     result = await db.execute(
@@ -346,7 +346,7 @@ async def carnet_pdf(carnet_id: int, current_user=Depends(get_current_user), db:
 
 
 @router.get("/{carnet_id}")
-async def get_carnet(carnet_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_carnet(carnet_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Carne).where(Carne.id == carnet_id).options(
             selectinload(Carne.student),
@@ -432,7 +432,7 @@ async def get_carnet(carnet_id: int, current_user=Depends(get_current_user), db:
 
 
 @router.post("")
-async def create_carnet(data: CarneCreateSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_carnet(data: CarneCreateSchema, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     from datetime import date as date_cls
     parts = data.first_due_date.split("-")
     first_due = date_cls(int(parts[0]), int(parts[1]), int(parts[2]))
@@ -485,7 +485,7 @@ async def create_carnet(data: CarneCreateSchema, current_user=Depends(require_ro
 async def register_payment(
     carnet_id: int, installment_id: int,
     data: PaymentSchema,
-    current_user=Depends(require_role("admin", "secretary")),
+    current_user=Depends(require_permission("financial")),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
@@ -556,7 +556,7 @@ async def register_payment(
 @router.post("/{carnet_id}/cancel")
 async def cancel_carnet(
     carnet_id: int,
-    current_user=Depends(require_role("admin", "secretary")),
+    current_user=Depends(require_permission("financial")),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Carne).where(Carne.id == carnet_id))
@@ -577,7 +577,7 @@ async def cancel_carnet(
 
 @router.post("/custom-pdf")
 async def custom_carne_pdf(data: CarneCustomPdfSchema, request: Request,
-                           current_user=Depends(require_role("admin", "secretary")),
+                           current_user=Depends(require_permission("financial")),
                            db: AsyncSession = Depends(get_db)):
     from app.services.carne_service import build_carne_pdf_custom
 
@@ -674,7 +674,7 @@ async def custom_carne_pdf(data: CarneCustomPdfSchema, request: Request,
 
 
 @router.get("/student/{student_id}/installments")
-async def student_installments(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def student_installments(student_id: int, current_user=Depends(require_permission("financial")), db: AsyncSession = Depends(get_db)):
     today = date.today()
     q = select(Installment).where(Installment.student_id == student_id).order_by(Installment.due_date)
     result = await db.execute(q)

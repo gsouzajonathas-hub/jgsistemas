@@ -9,14 +9,14 @@ from app.models.enrollment import Enrollment
 from app.models.financial import Installment, Payment
 from app.models.file_upload import FileUpload
 from app.models.settings import SchoolSettings
-from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from app.utils.constants import effective_installment_status
 
 router = APIRouter()
 
 
 @router.get("/{student_id}")
-async def get_student_profile(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_student_profile(student_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Student).where(Student.id == student_id).options(selectinload(Student.responsible))
     )
@@ -97,7 +97,7 @@ async def get_student_profile(student_id: int, current_user=Depends(get_current_
 
 
 @router.get("/{student_id}/pdf")
-async def student_sheet_pdf(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def student_sheet_pdf(student_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     import io
     from app.services.student_sheet_service import build_student_sheet_pdf
     from app.services.receipt_service import _school_logo

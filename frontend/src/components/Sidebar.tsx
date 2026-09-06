@@ -41,7 +41,7 @@ const navGroups: { label: string; items: { icon: any; label: string; path: strin
   {
     label: 'Sistema',
     items: [
-      { icon: Settings, label: 'Configurações', path: '/settings' },
+      { icon: Settings, label: 'Configurações', path: '/settings', permission: 'settings' },
       { icon: History, label: 'Auditoria', path: '/audit', permission: 'audit' },
     ],
   },

@@ -19,8 +19,10 @@ vi.mock('../../services/api', () => ({
   backupAPI: { export: vi.fn() },
 }));
 
+// super-admin-master (D-01): a aba Usuarios e exclusiva do super_admin — os testes desta
+// pagina que exercitam essa aba precisam de um usuario logado com esse role.
 vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 1, name: 'Admin Teste', email: 'admin@teste.local', role: 'admin' } }),
+  useAuth: () => ({ user: { id: 1, name: 'Suporte Teste', email: 'suporte@teste.local', role: 'super_admin' } }),
 }));
 
 vi.mock('../../hooks/useSettings', () => ({
@@ -108,5 +110,29 @@ describe('Settings', () => {
     // D-12: o campo preserva o valor digitado e a mensagem aparece na tela
     expect(await screen.findByDisplayValue('pix@teste.com')).toBeInTheDocument();
     expect(await screen.findByText(/Erro ao salvar\. Tente novamente\./i)).toBeInTheDocument();
+  });
+
+  it('formulario de novo usuario mostra checkbox de Auditoria e Configuracoes (T-02.02, D-04)', async () => {
+    render(<Settings />);
+    await abrirAbaUsuarios();
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Usuário/i }));
+
+    expect(await screen.findByText('Auditoria')).toBeInTheDocument();
+    // "Configurações" também é o rótulo de outro elemento da página — o checkbox novo do
+    // modal precisa ser uma ocorrência A MAIS, não a única.
+    expect(screen.getAllByText('Configurações').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('checkboxes de modulo aparecem mesmo com Perfil=Administrador selecionado (T-04.03, D-02)', async () => {
+    render(<Settings />);
+    await abrirAbaUsuarios();
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Usuário/i }));
+    const selectPerfil = await screen.findByDisplayValue('Secretaria');
+    fireEvent.change(selectPerfil, { target: { value: 'admin' } });
+
+    expect(screen.getByText('Módulos com acesso')).toBeInTheDocument();
+    expect(screen.getByText('Financeiro')).toBeInTheDocument();
   });
 });

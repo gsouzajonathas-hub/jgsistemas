@@ -40,6 +40,11 @@ async def _get_or_create(db_session: AsyncSession, model, filters: dict, default
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession) -> User:
+    # super-admin-master D-05: em producao, a migracao popula `permissions` de todo admin
+    # pre-existente com todos os modulos. Esta fixture e' usada por dezenas de testes de OUTRAS
+    # features que esperam um admin com acesso total — simula aqui o estado pos-migracao.
+    import json
+    from app.utils.permissions import ALL_MODULES
     return await _get_or_create(
         db_session,
         User,
@@ -49,6 +54,7 @@ async def admin_user(db_session: AsyncSession) -> User:
             "email": "admin@teste.local",
             "password_hash": hash_password("senha-forte-123"),
             "role": "admin",
+            "permissions": json.dumps(ALL_MODULES),
             "is_active": True,
         },
     )
@@ -184,6 +190,116 @@ async def material_sale_ctx(db_session: AsyncSession) -> dict:
     ctx.student = student
     ctx.sale = sale
     return ctx
+
+
+# Módulos existentes antes da introdução de audit/settings (T-02.02) — mantidos aqui como
+# lista literal para não depender de app.utils.permissions.ALL_MODULES, que só passa a existir
+# na T-01.02 (esta fixture é consumida por ela).
+_MODULOS_CONHECIDOS_SPRINT01 = [
+    "dashboard", "students", "enrollments", "courses", "teachers", "classes",
+    "attendance", "evaluations", "boletins", "certificates", "financial",
+    "schedule", "reports",
+]
+
+
+@pytest.fixture
+async def super_admin_user(db_session: AsyncSession) -> User:
+    return await _get_or_create(
+        db_session,
+        User,
+        filters={"email": "super-admin@teste.local"},
+        defaults={
+            "name": "Super Admin Teste",
+            "email": "super-admin@teste.local",
+            "password_hash": hash_password("senha-super-123"),
+            "role": "super_admin",
+            "is_active": True,
+        },
+    )
+
+
+@pytest.fixture
+async def super_admin_headers(super_admin_user: User) -> dict:
+    token = create_access_token({"sub": str(super_admin_user.id), "role": super_admin_user.role})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+async def admin_todos_modulos_user(db_session: AsyncSession) -> User:
+    import json
+    return await _get_or_create(
+        db_session,
+        User,
+        filters={"email": "admin-todos-modulos@teste.local"},
+        defaults={
+            "name": "Admin Todos Modulos",
+            "email": "admin-todos-modulos@teste.local",
+            "password_hash": hash_password("senha-forte-123"),
+            "role": "admin",
+            "permissions": json.dumps(_MODULOS_CONHECIDOS_SPRINT01),
+            "is_active": True,
+        },
+    )
+
+
+@pytest.fixture
+async def admin_headers_todos_modulos(admin_todos_modulos_user: User) -> dict:
+    token = create_access_token({"sub": str(admin_todos_modulos_user.id), "role": admin_todos_modulos_user.role})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+async def admin_sem_modulos_user(db_session: AsyncSession) -> User:
+    import json
+    return await _get_or_create(
+        db_session,
+        User,
+        filters={"email": "admin-sem-modulos@teste.local"},
+        defaults={
+            "name": "Admin Sem Modulos",
+            "email": "admin-sem-modulos@teste.local",
+            "password_hash": hash_password("senha-forte-123"),
+            "role": "admin",
+            "permissions": json.dumps([]),
+            "is_active": True,
+        },
+    )
+
+
+@pytest.fixture
+async def admin_headers_sem_modulos(admin_sem_modulos_user: User) -> dict:
+    token = create_access_token({"sub": str(admin_sem_modulos_user.id), "role": admin_sem_modulos_user.role})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def headers_com_permissoes(db_session: AsyncSession):
+    """Factory de headers de autenticacao para testar enforcement por modulo (sprint-03).
+
+    Uso: `headers_com_permissoes("secretary", ["students"])` -> dict de headers de um
+    secretary novo com só o módulo `students` liberado. Um email exclusivo por chamada evita
+    colisao com outros usuarios do banco de sessao compartilhado.
+    """
+    import json
+    import uuid
+
+    async def _factory(role: str, permissoes: list) -> dict:
+        email = f"enforcement-{uuid.uuid4().hex[:12]}@teste.local"
+        user = User(
+            name=f"Enforcement {role}",
+            email=email,
+            password_hash=hash_password("senha-forte-123"),
+            role=role,
+            permissions=json.dumps(permissoes),
+            is_active=True,
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+        token = create_access_token({"sub": str(user.id), "role": user.role})
+        return {"Authorization": f"Bearer {token}"}
+
+    return _factory
 
 
 @pytest.fixture

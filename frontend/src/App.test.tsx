@@ -44,7 +44,8 @@ const goTo = (path: string) => {
 
 describe('roteamento das 5 rotas reativadas', () => {
   it('admin acessa /classes e vê o conteúdo de Classes sem redirect', async () => {
-    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: [] });
+    // super-admin-master (D-02): admin comum passou a ser regulado por permissions.
+    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: ['classes'] });
     goTo('/classes');
     render(<App />);
     expect(await screen.findByRole('heading', { level: 1, name: 'Turmas' })).toBeInTheDocument();
@@ -62,14 +63,16 @@ describe('roteamento das 5 rotas reativadas', () => {
 
 describe('rotas de Cursos e Professores (T-01.01)', () => {
   it('admin acessa /courses e vê a página de Cursos sem redirect', async () => {
-    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: [] });
+    // super-admin-master (D-02): admin comum passou a ser regulado por permissions.
+    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: ['courses'] });
     goTo('/courses');
     render(<App />);
     expect(await screen.findByRole('heading', { level: 1, name: 'Cursos' })).toBeInTheDocument();
   });
 
   it('admin acessa /teachers e vê a página de Professores sem redirect', async () => {
-    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: [] });
+    // super-admin-master (D-02): admin comum passou a ser regulado por permissions.
+    setUser({ id: 1, name: 'Admin', email: 'admin@teste.com', role: 'admin', permissions: ['teachers'] });
     goTo('/teachers');
     render(<App />);
     expect(await screen.findByRole('heading', { level: 1, name: 'Professores' })).toBeInTheDocument();

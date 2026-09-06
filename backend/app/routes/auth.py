@@ -80,7 +80,7 @@ async def _optional_admin_user(request: Request, db: AsyncSession):
         payload = decode_token(auth_header[7:])
         result = await db.execute(select(User).where(User.id == int(payload.get("sub", "0"))))
         user = result.scalar_one_or_none()
-        return user if user and user.is_active and user.role == "admin" else None
+        return user if user and user.is_active and user.role == "super_admin" else None
     except Exception:
         return None
 
@@ -146,7 +146,7 @@ async def register(req: RegisterRequest, request: Request, db: AsyncSession = De
     if (total.scalar() or 0) > 0:
         admin = await _optional_admin_user(request, db)
         if not admin:
-            raise HTTPException(status_code=403, detail="Apenas administradores podem criar usuários")
+            raise HTTPException(status_code=403, detail="Apenas o super admin pode criar usuários")
 
     result = await db.execute(select(User).where(User.email == req.email))
     if result.scalar_one_or_none():
@@ -261,7 +261,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.get("/users")
 async def list_users(
-    current_user: User = Depends(require_role("admin")),
+    current_user: User = Depends(require_role("super_admin")),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).order_by(User.name))
@@ -281,7 +281,7 @@ async def list_users(
 async def delete_user(
     user_id: int,
     request: Request,
-    current_user: User = Depends(require_role("admin")),
+    current_user: User = Depends(require_role("super_admin")),
     db: AsyncSession = Depends(get_db)
 ):
     if user_id == current_user.id:
@@ -338,7 +338,7 @@ async def update_user(
     user_id: int,
     req: UpdateUserRequest,
     request: Request,
-    current_user: User = Depends(require_role("admin")),
+    current_user: User = Depends(require_role("super_admin")),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.id == user_id))

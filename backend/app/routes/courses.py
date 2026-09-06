@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.course import Course
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.audit import log_audit
 
 router = APIRouter()
@@ -29,14 +29,14 @@ def _course_to_dict(c) -> dict:
 
 
 @router.get("")
-async def list_courses(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_courses(current_user=Depends(require_permission("courses")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Course).order_by(Course.name))
     return [_course_to_dict(c) for c in result.scalars().all()]
 
 
 @router.post("")
 async def create_course(data: CourseSchema, request: Request,
-                        current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                        current_user=Depends(require_permission("courses")), db: AsyncSession = Depends(get_db)):
     if not data.name.strip():
         raise HTTPException(status_code=400, detail="Nome do curso é obrigatório")
     course = Course(**data.model_dump())
@@ -51,7 +51,7 @@ async def create_course(data: CourseSchema, request: Request,
 
 @router.put("/{course_id}")
 async def update_course(course_id: int, data: CourseSchema, request: Request,
-                        current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                        current_user=Depends(require_permission("courses")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Course).where(Course.id == course_id))
     course = result.scalar_one_or_none()
     if not course:
@@ -68,7 +68,7 @@ async def update_course(course_id: int, data: CourseSchema, request: Request,
 
 @router.delete("/{course_id}")
 async def delete_course(course_id: int, request: Request,
-                        current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                        current_user=Depends(require_permission("courses")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Course).where(Course.id == course_id))
     course = result.scalar_one_or_none()
     if not course:

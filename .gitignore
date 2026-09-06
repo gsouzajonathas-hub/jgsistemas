@@ -54,3 +54,6 @@ expxdev/
 
 # Backups de banco de dados (NUNCA versionar)
 backups/
+
+# Rastro de eventos da expx (local de quem executou, cresce rapido)
+docs/eventos/

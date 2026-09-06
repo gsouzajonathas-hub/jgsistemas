@@ -6,14 +6,14 @@ from app.models.student import Student
 from app.models.enrollment import Enrollment
 from app.models.class_group import ClassGroup
 from app.models.financial import Installment, Payment
-from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from datetime import date, timedelta
 
 router = APIRouter()
 
 
 @router.get("/dashboard")
-async def dashboard(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def dashboard(current_user=Depends(require_permission("dashboard")), db: AsyncSession = Depends(get_db)):
     import asyncio
     today = date.today()
     week_later = today + timedelta(days=7)
@@ -58,7 +58,7 @@ async def dashboard(current_user=Depends(get_current_user), db: AsyncSession = D
 
 
 @router.get("/active-students")
-async def active_students(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def active_students(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Student).where(Student.status == "active").order_by(Student.full_name))
     students = result.scalars().all()
     return [{
@@ -71,7 +71,7 @@ async def active_students(current_user=Depends(get_current_user), db: AsyncSessi
 
 
 @router.get("/inactive-students")
-async def inactive_students(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def inactive_students(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Student).where(Student.status != "active").order_by(Student.full_name))
     students = result.scalars().all()
     return [{
@@ -84,7 +84,7 @@ async def inactive_students(current_user=Depends(get_current_user), db: AsyncSes
 
 
 @router.get("/overdue")
-async def overdue_report(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def overdue_report(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Installment).where(Installment.status == "overdue").order_by(Installment.due_date)
     )
@@ -110,7 +110,7 @@ async def overdue_report(current_user=Depends(get_current_user), db: AsyncSessio
 
 
 @router.get("/enrollments")
-async def enrollments_report(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def enrollments_report(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Enrollment).order_by(Enrollment.created_at.desc()))
     enrollments = result.scalars().all()
 
@@ -137,7 +137,7 @@ async def enrollments_report(current_user=Depends(get_current_user), db: AsyncSe
 
 
 @router.get("/financial")
-async def financial_report(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def financial_report(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     total_expected = await db.execute(
         select(func.sum(Installment.amount)).where(Installment.status != "cancelled")
     )
@@ -177,7 +177,7 @@ async def financial_report(current_user=Depends(get_current_user), db: AsyncSess
 
 
 @router.get("/students-excel")
-async def students_excel(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def students_excel(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     import openpyxl
     from fastapi.responses import StreamingResponse
     import io
@@ -202,7 +202,7 @@ async def students_excel(current_user=Depends(get_current_user), db: AsyncSessio
 
 
 @router.get("/students-pdf")
-async def students_pdf(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def students_pdf(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
@@ -301,7 +301,7 @@ async def students_pdf(current_user=Depends(get_current_user), db: AsyncSession 
 
 
 @router.get("/overdue-excel")
-async def overdue_excel(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def overdue_excel(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     import openpyxl
     from fastapi.responses import StreamingResponse
     import io
@@ -334,7 +334,7 @@ async def overdue_excel(current_user=Depends(get_current_user), db: AsyncSession
 
 
 @router.get("/overdue-pdf")
-async def overdue_pdf(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def overdue_pdf(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm

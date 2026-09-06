@@ -22,6 +22,8 @@ const ALL_PERMISSIONS = [
   { key: 'financial', label: 'Financeiro' },
   { key: 'schedule', label: 'Agenda' },
   { key: 'reports', label: 'Relatórios' },
+  { key: 'audit', label: 'Auditoria' },
+  { key: 'settings', label: 'Configurações' },
 ];
 
 interface UserForm {
@@ -53,7 +55,8 @@ export default function Settings() {
 
   useEffect(() => {
     settingsAPI.get().then(({ data }) => setSettings(data)).finally(() => setLoading(false));
-    if (user?.role === 'admin') {
+    // super-admin-master (D-01): gestao de usuarios e exclusiva do super_admin.
+    if (user?.role === 'super_admin') {
       authAPI.getUsers().then(({ data }) => setUsers(data));
     }
   }, []);
@@ -201,7 +204,8 @@ export default function Settings() {
       <div className="flex gap-1 border-b border-slate-200 dark:border-white/10">
         {[
           { key: 'school', label: 'Escola', icon: Building },
-          { key: 'users', label: 'Usuários', icon: Users },
+          // super-admin-master (D-01): aba Usuarios exclusiva do super_admin.
+          ...(user?.role === 'super_admin' ? [{ key: 'users', label: 'Usuários', icon: Users }] : []),
           { key: 'appearance', label: 'Aparência', icon: Palette },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
@@ -429,8 +433,10 @@ export default function Settings() {
                 </select>
               </div>
 
-              {form.role !== 'admin' && (
+              {(
                 <div>
+                  {/* super-admin-master (D-02): admin comum tambem e regulado por permissoes,
+                      entao o checkbox de modulos aparece para qualquer role selecionado. */}
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Módulos com acesso</label>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Selecione os módulos que este usuário poderá acessar.</p>
                   <div className="grid grid-cols-2 gap-2">

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List
 from app.database import get_db
 from app.models.attendance import Attendance
-from app.utils.auth import get_current_user
+from app.utils.permissions import require_permission
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
 
@@ -26,7 +26,7 @@ class AttendanceBulk(BaseModel):
 
 @router.get("")
 async def list_attendance(class_group_id: int = None, student_id: int = None, date: str = None,
-                          current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                          current_user=Depends(require_permission("attendance")), db: AsyncSession = Depends(get_db)):
     q = select(Attendance)
     if class_group_id:
         q = q.where(Attendance.class_group_id == class_group_id)
@@ -43,7 +43,7 @@ async def list_attendance(class_group_id: int = None, student_id: int = None, da
 
 
 @router.post("/bulk")
-async def bulk_attendance(data: AttendanceBulk, request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def bulk_attendance(data: AttendanceBulk, request: Request, current_user=Depends(require_permission("attendance")), db: AsyncSession = Depends(get_db)):
     from datetime import date as d
     att_date = d.fromisoformat(data.date)
     for record in data.records:
@@ -75,7 +75,7 @@ async def bulk_attendance(data: AttendanceBulk, request: Request, current_user=D
 
 
 @router.get("/report/{class_group_id}")
-async def attendance_report(class_group_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def attendance_report(class_group_id: int, current_user=Depends(require_permission("attendance")), db: AsyncSession = Depends(get_db)):
     from app.models.student import Student
     from app.models.enrollment import Enrollment
 

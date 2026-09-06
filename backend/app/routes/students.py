@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.student import Student, Responsible
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 from app.utils.uploads import validate_and_save
 from app.utils.security import client_ip
 from app.utils.audit import log_audit
@@ -114,7 +114,7 @@ def _student_to_dict(s: Student) -> dict:
 @router.get("")
 async def list_students(
     skip: int = 0, limit: int = 50, search: str = "",
-    status: str = "", current_user=Depends(get_current_user),
+    status: str = "", current_user=Depends(require_permission("students")),
     db: AsyncSession = Depends(get_db)
 ):
     q = select(Student)
@@ -139,7 +139,7 @@ async def list_students(
 
 
 @router.get("/{student_id}")
-async def get_student(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_student(student_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Student).where(Student.id == student_id).options(selectinload(Student.responsible))
     )
@@ -165,7 +165,7 @@ async def get_student(student_id: int, current_user=Depends(get_current_user), d
 async def create_student(
     student_data: StudentSchema,
     request: Request,
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_permission("students")),
     db: AsyncSession = Depends(get_db)
 ):
     data = student_data.model_dump()
@@ -238,7 +238,7 @@ async def create_student(
 async def update_student(
     student_id: int, student_data: StudentSchema,
     request: Request,
-    current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
         select(Student).where(Student.id == student_id).options(selectinload(Student.responsible))
@@ -291,7 +291,7 @@ async def update_student(
 
 
 @router.delete("/{student_id}")
-async def delete_student(student_id: int, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_student(student_id: int, request: Request, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Student).where(Student.id == student_id))
     student = result.scalar_one_or_none()
     if not student:
@@ -323,7 +323,7 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
 @router.post("/{student_id}/upload")
 async def upload_file(
     request: Request, student_id: int, file: UploadFile = File(...), category: str = "other",
-    current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)
+    current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Student).where(Student.id == student_id))
     if not result.scalar_one_or_none():
@@ -336,7 +336,7 @@ async def upload_file(
 
 
 @router.get("/{student_id}/files")
-async def list_files(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_files(student_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     from app.models.file_upload import FileUpload
     result = await db.execute(
         select(FileUpload).where(FileUpload.student_id == student_id).order_by(FileUpload.created_at.desc())
@@ -346,7 +346,7 @@ async def list_files(student_id: int, current_user=Depends(get_current_user), db
 
 
 @router.get("/{student_id}/files/{file_id}/download")
-async def download_file(student_id: int, file_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def download_file(student_id: int, file_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     from app.models.file_upload import FileUpload
     result = await db.execute(select(FileUpload).where(FileUpload.id == file_id, FileUpload.student_id == student_id))
     f = result.scalar_one_or_none()
@@ -385,7 +385,7 @@ async def download_file(student_id: int, file_id: int, current_user=Depends(get_
 
 
 @router.delete("/{student_id}/files/{file_id}")
-async def delete_file(student_id: int, file_id: int, request: Request, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def delete_file(student_id: int, file_id: int, request: Request, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     from app.models.file_upload import FileUpload
     result = await db.execute(select(FileUpload).where(FileUpload.id == file_id, FileUpload.student_id == student_id))
     f = result.scalar_one_or_none()
@@ -404,7 +404,7 @@ async def delete_file(student_id: int, file_id: int, request: Request, current_u
 
 
 @router.get("/{student_id}/carne-pdf")
-async def carne_pdf(student_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def carne_pdf(student_id: int, current_user=Depends(require_permission("students")), db: AsyncSession = Depends(get_db)):
     from fastapi.responses import StreamingResponse
     from app.models.settings import SchoolSettings
     from app.models.financial import Installment

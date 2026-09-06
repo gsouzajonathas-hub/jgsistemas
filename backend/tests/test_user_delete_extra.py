@@ -36,12 +36,12 @@ async def _criar_usuario(db_session, email, role="secretary", is_active=True):
     return u
 
 
-async def test_delete_usuario_sem_historico(client, auth_headers, db_session):
+async def test_delete_usuario_sem_historico(client, super_admin_headers, db_session):
     u = await _criar_usuario(db_session, "sem-historico@teste.local")
     await db_session.commit()
     await db_session.refresh(u)
 
-    resp = client.delete(f"/api/auth/users/{u.id}", headers=auth_headers)
+    resp = client.delete(f"/api/auth/users/{u.id}", headers=super_admin_headers)
     assert resp.status_code == 200, resp.text
     async with async_session() as s:
         restante = (
@@ -51,7 +51,7 @@ async def test_delete_usuario_sem_historico(client, auth_headers, db_session):
 
 
 async def test_delete_preserva_communication_log_com_sent_by_nulo(
-    client, auth_headers, db_session
+    client, super_admin_headers, db_session
 ):
     u = await _criar_usuario(db_session, "com-comunicacao@teste.local")
     await db_session.flush()
@@ -68,7 +68,7 @@ async def test_delete_preserva_communication_log_com_sent_by_nulo(
     await db_session.refresh(comm)
     await db_session.refresh(audit_alvo)
 
-    resp = client.delete(f"/api/auth/users/{u.id}", headers=auth_headers)
+    resp = client.delete(f"/api/auth/users/{u.id}", headers=super_admin_headers)
     assert resp.status_code == 200, resp.text
 
     async with async_session() as s:
@@ -89,18 +89,26 @@ async def test_delete_preserva_communication_log_com_sent_by_nulo(
 
 
 async def test_delete_admin2_permitido_quando_existe_outro_ativo(
-    client, auth_headers, db_session
+    client, super_admin_headers, admin_user, db_session
 ):
     # admin_user (fixture) e' o admin ativo da sessao; admin2 ativo = 2 admins ativos
     admin2 = await _criar_usuario(db_session, "admin2@teste.local", role="admin")
     await db_session.commit()
     await db_session.refresh(admin2)
 
-    resp = client.delete(f"/api/auth/users/{admin2.id}", headers=auth_headers)
+    resp = client.delete(f"/api/auth/users/{admin2.id}", headers=super_admin_headers)
     assert resp.status_code == 200, resp.text
 
 
-async def test_delete_ultimo_admin_ativo_bloqueado(client, auth_headers, db_session):
+async def test_delete_ultimo_admin_ativo_bloqueado(client, super_admin_headers, admin_user, db_session):
+    # Garante o cenario "so existe 1 admin ativo": outras fixtures de niveis de permissao
+    # (super-admin-master) tambem criam usuarios role=admin ativos no mesmo banco de sessao.
+    from sqlalchemy import update
+    await db_session.execute(
+        update(User).where(User.role == "admin", User.id != admin_user.id).values(is_active=False)
+    )
+    await db_session.commit()
+
     # administrador inativo: excluir deixaria o sistema sem segundo admin ativo
     admin_inativo = await _criar_usuario(
         db_session, "admin-inativo@teste.local", role="admin", is_active=False
@@ -108,7 +116,7 @@ async def test_delete_ultimo_admin_ativo_bloqueado(client, auth_headers, db_sess
     await db_session.commit()
     await db_session.refresh(admin_inativo)
 
-    resp = client.delete(f"/api/auth/users/{admin_inativo.id}", headers=auth_headers)
+    resp = client.delete(f"/api/auth/users/{admin_inativo.id}", headers=super_admin_headers)
     assert resp.status_code == 400, resp.text
     assert "último administrador" in resp.json()["detail"].lower()
 
@@ -119,14 +127,16 @@ async def test_delete_ultimo_admin_ativo_bloqueado(client, auth_headers, db_sess
     assert restante is not None, "usuario protegido nao pode ser excluido"
 
 
-async def test_delete_auto_exclusao_bloqueada(client, auth_headers, admin_user):
-    resp = client.delete(f"/api/auth/users/{admin_user.id}", headers=auth_headers)
+async def test_delete_auto_exclusao_bloqueada(client, super_admin_headers, super_admin_user):
+    # super-admin-master D-01: so super_admin chama esta rota agora, entao o cenario de
+    # auto-exclusao passa a ser o proprio super_admin tentando se auto-excluir.
+    resp = client.delete(f"/api/auth/users/{super_admin_user.id}", headers=super_admin_headers)
     assert resp.status_code == 400, resp.text
     assert "própria conta" in resp.json()["detail"].lower()
 
 
-async def test_delete_usuario_inexistente_retorna_404(client, auth_headers):
-    resp = client.delete("/api/auth/users/999999", headers=auth_headers)
+async def test_delete_usuario_inexistente_retorna_404(client, super_admin_headers):
+    resp = client.delete("/api/auth/users/999999", headers=super_admin_headers)
     assert resp.status_code == 404, resp.text
 
 

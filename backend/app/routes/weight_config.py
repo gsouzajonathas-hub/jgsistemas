@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from app.database import get_db
 from app.models.weight_config import GradeWeightConfig
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ class WeightSaveSchema(BaseModel):
 
 @router.get("")
 async def list_weight_configs(class_group_id: Optional[int] = None,
-                              current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                              current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     q = select(GradeWeightConfig)
     if class_group_id:
         q = q.where(GradeWeightConfig.class_group_id == class_group_id)
@@ -37,7 +37,7 @@ async def list_weight_configs(class_group_id: Optional[int] = None,
 
 @router.put("")
 async def save_weight_configs(data: WeightSaveSchema,
-                              current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+                              current_user=Depends(require_permission("evaluations")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(GradeWeightConfig).where(
         GradeWeightConfig.class_group_id == data.class_group_id))
     existing = {c.eval_type: c for c in result.scalars().all()}

@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.enrollment import Enrollment
 from app.models.class_group import ClassGroup
 from app.models.student import Student
-from app.utils.auth import get_current_user, require_role
+from app.utils.permissions import require_permission
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ class EnrollmentSchema(BaseModel):
 
 @router.get("")
 async def list_enrollments(skip: int = 0, limit: int = 50, status: str = "", class_group_id: int = None,
-                           current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+                           current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     q = select(Enrollment).join(Student, Enrollment.student_id == Student.id)
     if status:
         q = q.where(Enrollment.status == status)
@@ -60,7 +60,7 @@ async def list_enrollments(skip: int = 0, limit: int = 50, status: str = "", cla
 
 
 @router.post("")
-async def create_enrollment(data: EnrollmentSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def create_enrollment(data: EnrollmentSchema, current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     d = data.model_dump()
     if d.get("enrollment_date"):
         d["enrollment_date"] = date.fromisoformat(d["enrollment_date"])
@@ -82,7 +82,7 @@ async def create_enrollment(data: EnrollmentSchema, current_user=Depends(require
 
 
 @router.put("/{enrollment_id}")
-async def update_enrollment(enrollment_id: int, data: EnrollmentSchema, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def update_enrollment(enrollment_id: int, data: EnrollmentSchema, current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Enrollment).where(Enrollment.id == enrollment_id))
     enrollment = result.scalar_one_or_none()
     if not enrollment:
@@ -97,7 +97,7 @@ async def update_enrollment(enrollment_id: int, data: EnrollmentSchema, current_
 
 
 @router.post("/{enrollment_id}/cancel")
-async def cancel_enrollment(enrollment_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def cancel_enrollment(enrollment_id: int, current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Enrollment).where(Enrollment.id == enrollment_id))
     enrollment = result.scalar_one_or_none()
     if not enrollment:
@@ -112,7 +112,7 @@ async def cancel_enrollment(enrollment_id: int, current_user=Depends(require_rol
 
 
 @router.post("/{enrollment_id}/suspend")
-async def suspend_enrollment(enrollment_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def suspend_enrollment(enrollment_id: int, current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Enrollment).where(Enrollment.id == enrollment_id))
     enrollment = result.scalar_one_or_none()
     if not enrollment:
@@ -127,7 +127,7 @@ async def suspend_enrollment(enrollment_id: int, current_user=Depends(require_ro
 
 
 @router.post("/{enrollment_id}/renew")
-async def renew_enrollment(enrollment_id: int, current_user=Depends(require_role("admin", "secretary")), db: AsyncSession = Depends(get_db)):
+async def renew_enrollment(enrollment_id: int, current_user=Depends(require_permission("enrollments")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Enrollment).where(Enrollment.id == enrollment_id))
     enrollment = result.scalar_one_or_none()
     if not enrollment:
