@@ -42,3 +42,9 @@ services:
       # Remetente (dominio verificado no Resend). Ex.: no-reply@seudominio.com
       - key: RESEND_FROM
         sync: false
+      # ===== Supabase Storage (uploads persistentes) =====
+      # Projeto: https://tnwemltwtyrkacpdqbug.supabase.co
+      - key: SUPABASE_URL
+        value: https://tnwemltwtyrkacpdqbug.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
