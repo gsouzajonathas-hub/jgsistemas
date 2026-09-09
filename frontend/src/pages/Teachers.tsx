@@ -34,7 +34,7 @@ export default function Teachers() {
 
   const load = () => {
     setLoading(true);
-    teachersAPI.listAll().then(({ data }) => setTeachers(data || [])).finally(() => setLoading(false));
+    teachersAPI.listAll().then(({ data }) => setTeachers(data || [])).catch(() => setTeachers([])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

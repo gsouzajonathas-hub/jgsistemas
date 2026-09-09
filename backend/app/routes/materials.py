@@ -141,6 +141,9 @@ async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_per
     )
     db.add(sale)
 
+    if data.quantity > material.stock:
+        raise HTTPException(status_code=400, detail=f"Estoque insuficiente. Disponível: {material.stock}")
+
     material.stock = max(0, material.stock - data.quantity)
 
     await db.commit()

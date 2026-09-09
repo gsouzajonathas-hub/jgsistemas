@@ -25,6 +25,24 @@ import Planos from './pages/Planos';
 import Contratos from './pages/Contratos';
 import Settings from './pages/Settings';
 
+const MODULE_ROUTES: { permission: string; path: string }[] = [
+  { permission: 'dashboard', path: '/' },
+  { permission: 'students', path: '/students' },
+  { permission: 'enrollments', path: '/enrollments' },
+  { permission: 'courses', path: '/courses' },
+  { permission: 'teachers', path: '/teachers' },
+  { permission: 'classes', path: '/classes' },
+  { permission: 'attendance', path: '/attendance' },
+  { permission: 'evaluations', path: '/evaluations' },
+  { permission: 'boletins', path: '/boletins' },
+  { permission: 'certificates', path: '/certificates' },
+  { permission: 'financial', path: '/financial' },
+  { permission: 'schedule', path: '/schedule' },
+  { permission: 'reports', path: '/reports' },
+  { permission: 'audit', path: '/audit' },
+  { permission: 'settings', path: '/settings' },
+];
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -56,8 +74,18 @@ function HomeRoute() {
     </div>
   );
   if (user) {
-    if (!hasPermission('dashboard')) return <Navigate to="/settings" />;
-    return <Layout><Dashboard /></Layout>;
+    if (hasPermission('dashboard')) return <Layout><Dashboard /></Layout>;
+    const fallback = MODULE_ROUTES.find((m) => m.permission !== 'dashboard' && hasPermission(m.permission));
+    if (fallback) return <Navigate to={fallback.path} replace />;
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-5xl mb-4">🚫</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Sem permissão de acesso</h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">Seu usuário ainda não possui módulos liberados. Fale com o administrador.</p>
+        </div>
+      </Layout>
+    );
   }
   return <Landing />;
 }
@@ -88,7 +116,7 @@ export default function App() {
           <Route path="/schedule" element={<PermissionRoute permission="schedule"><Schedule /></PermissionRoute>} />
           <Route path="/reports" element={<PermissionRoute permission="reports"><Reports /></PermissionRoute>} />
           <Route path="/audit" element={<PermissionRoute permission="audit"><Audit /></PermissionRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/settings" element={<PermissionRoute permission="settings"><Settings /></PermissionRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

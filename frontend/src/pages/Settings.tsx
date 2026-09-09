@@ -314,7 +314,7 @@ export default function Settings() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/10">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{users.length} usuário(s)</span>
             <div className="flex items-center gap-2">
-              {user?.role === 'admin' && (
+              {user?.role === 'super_admin' && (
                 <button onClick={handleBackup}
                   className="px-3 py-2 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-white/5">
                   <Download className="w-4 h-4" /> Backup do Banco

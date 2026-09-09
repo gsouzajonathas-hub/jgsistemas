@@ -40,6 +40,7 @@ export default function Contratos() {
     setLoading(true);
     contractsAPI.list()
       .then(({ data }) => setContracts(data))
+      .catch(() => setContracts([]))
       .finally(() => setLoading(false));
   };
 

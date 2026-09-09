@@ -66,8 +66,14 @@ async def create_enrollment(data: EnrollmentSchema, current_user=Depends(require
         d["enrollment_date"] = date.fromisoformat(d["enrollment_date"])
     else:
         d["enrollment_date"] = date.today()
-    enrollment = Enrollment(**d)
-    db.add(enrollment)
+
+    existing = (await db.execute(select(Enrollment).where(
+        Enrollment.student_id == data.student_id,
+        Enrollment.class_group_id == data.class_group_id,
+        Enrollment.status == "active"
+    ))).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Aluno já está matriculado nesta turma.")
 
     result = await db.execute(select(ClassGroup).where(ClassGroup.id == data.class_group_id))
     cg = result.scalar_one_or_none()
@@ -75,6 +81,9 @@ async def create_enrollment(data: EnrollmentSchema, current_user=Depends(require
         raise HTTPException(status_code=404, detail="Turma não encontrada")
     if cg.max_capacity and cg.current_count >= cg.max_capacity:
         raise HTTPException(status_code=400, detail="Turma atingiu a capacidade máxima")
+
+    enrollment = Enrollment(**d)
+    db.add(enrollment)
     cg.current_count += 1
 
     await db.commit()

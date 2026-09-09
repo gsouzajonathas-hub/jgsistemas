@@ -13,7 +13,7 @@ export default function Classes() {
 
   const load = () => {
     setLoading(true);
-    classesAPI.list().then(({ data }) => setClasses(data)).finally(() => setLoading(false));
+    classesAPI.list().then(({ data }) => setClasses(data)).catch(() => setClasses([])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
@@ -87,9 +87,9 @@ export default function Classes() {
 
               <div className="mt-3 flex items-center justify-between">
                 <div className="w-full bg-slate-200 dark:bg-white/10 rounded-full h-2">
-                  <div className="bg-primary-600 h-2 rounded-full transition-all" style={{ width: `${Math.min((c.current_count / c.max_capacity) * 100, 100)}%` }} />
+                  <div className="bg-primary-600 h-2 rounded-full transition-all" style={{ width: `${Math.min(((c.current_count || 0) / (c.max_capacity || 1)) * 100, 100)}%` }} />
                 </div>
-                <span className="text-xs text-slate-500 ml-2 whitespace-nowrap">{c.current_count}/{c.max_capacity}</span>
+                <span className="text-xs text-slate-500 ml-2 whitespace-nowrap">{c.current_count || 0}/{c.max_capacity || 0}</span>
               </div>
             </div>
           ))}

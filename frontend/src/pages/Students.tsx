@@ -21,6 +21,7 @@ export default function Students() {
     setLoading(true);
     studentsAPI.list({ skip: page * 20, limit: 20, search, status: statusFilter })
       .then(({ data }) => { setStudents(data.students); setTotal(data.total); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   };
 

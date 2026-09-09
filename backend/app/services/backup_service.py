@@ -29,15 +29,26 @@ async def export_database(db: AsyncSession) -> dict:
 
     result = {}
     for table in sorted(tables):
-        rows = (await db.execute(text(f'SELECT * FROM "{table}"'))).all()
-        if not rows:
-            result[table] = []
-            continue
-        columns = list(rows[0]._mapping.keys())
-        result[table] = [
-            {col: _to_jsonable(row._mapping[col]) for col in columns}
-            for row in rows
-        ]
+        if table == "users":
+            rows = (await db.execute(text(f'SELECT * FROM "{table}"'))).all()
+            if not rows:
+                result[table] = []
+                continue
+            columns = [c for c in rows[0]._mapping.keys() if c != "password_hash"]
+            result[table] = [
+                {col: _to_jsonable(row._mapping[col]) for col in columns}
+                for row in rows
+            ]
+        else:
+            rows = (await db.execute(text(f'SELECT * FROM "{table}"'))).all()
+            if not rows:
+                result[table] = []
+                continue
+            columns = list(rows[0]._mapping.keys())
+            result[table] = [
+                {col: _to_jsonable(row._mapping[col]) for col in columns}
+                for row in rows
+            ]
     return result
 
 

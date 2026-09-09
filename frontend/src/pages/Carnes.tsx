@@ -40,7 +40,7 @@ export default function Carnes() {
     }
   };
 
-  useEffect(() => { load(); }, [page, month, statusFilter]);
+  useEffect(() => { load(); }, [page, search, month, statusFilter]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -56,11 +56,11 @@ export default function Carnes() {
   const summaryCards = useMemo(() => {
     if (!stats) return [];
     return [
-      { label: 'Carnês Emitidos', value: stats.total_carnets || 0, icon: FileText, color: 'blue' },
-      { label: 'Total a Receber', value: stats.total_to_receive || 0, icon: DollarSign, color: 'primary', format: 'currency' },
-      { label: 'Recebido', value: stats.total_received || 0, icon: CheckCircle, color: 'green', format: 'currency' },
-      { label: 'Em Aberto', value: stats.total_open || 0, icon: Clock, color: 'yellow', format: 'currency' },
-      { label: 'Em Atraso', value: stats.total_overdue || 0, icon: AlertTriangle, color: 'red', format: 'currency' },
+      { label: 'Carnês Emitidos', status: '', value: stats.total_carnets || 0, icon: FileText, color: 'blue' },
+      { label: 'Total a Receber', status: 'pending', value: stats.total_to_receive || 0, icon: DollarSign, color: 'primary', format: 'currency' },
+      { label: 'Recebido', status: 'paid', value: stats.total_received || 0, icon: CheckCircle, color: 'green', format: 'currency' },
+      { label: 'Em Aberto', status: 'pending', value: stats.total_open || 0, icon: Clock, color: 'yellow', format: 'currency' },
+      { label: 'Em Atraso', status: 'overdue', value: stats.total_overdue || 0, icon: AlertTriangle, color: 'red', format: 'currency' },
     ];
   }, [stats]);
 
@@ -167,7 +167,7 @@ export default function Carnes() {
               <button
                 key={card.label}
                 onClick={() => handleCardClick(card.label)}
-                className={`${colorMap[card.color]} rounded-xl p-4 border text-left transition-all hover:scale-[1.02] ${statusFilter === (summaryCards.indexOf(card) === 0 ? '' : statusFilter) ? 'ring-2 ring-primary-500' : ''}`}
+                className={`${colorMap[card.color]} rounded-xl p-4 border text-left transition-all hover:scale-[1.02] ${statusFilter === card.status ? 'ring-2 ring-primary-500' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -412,7 +412,7 @@ function NewCarneModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   });
 
   useEffect(() => {
-    if (paymentMethods.length) {
+    if (paymentMethods.length && !form.payment_methods) {
       setForm(f => ({ ...f, payment_methods: paymentMethods.join(',') }));
     }
   }, [paymentMethods]);
@@ -666,7 +666,7 @@ function NewCarneModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Juros Dia (% a.m.)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Juros (% a.d.)</label>
                   <input
                     type="text"
                     inputMode="decimal"

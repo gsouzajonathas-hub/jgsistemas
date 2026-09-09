@@ -29,13 +29,12 @@ def _fmt_date(value) -> str:
 def _weighted_average(evals) -> float:
     if not evals:
         return 0
-    total_weight = sum(e.weight for e in evals)
-    if total_weight == 0:
-        total_weight = 1
-    return round(
-        sum((e.score / e.max_score if e.max_score else 0) * e.weight for e in evals)
-        / total_weight * 100, 2
-    )
+    valid = [e for e in evals if e.max_score and e.max_score > 0]
+    if not valid:
+        return 0.0
+    total_weight = sum(e.weight for e in valid)
+    weighted_sum = sum((e.score / e.max_score) * e.weight for e in valid)
+    return round((weighted_sum / total_weight) * 100, 2) if total_weight else 0.0
 
 
 def _grade_status(avg: float, has_evals: bool) -> str:
@@ -296,23 +295,19 @@ def _school_logo(settings):
     if not logo_path:
         return None
     try:
-        import tempfile
         import io
         from PIL import Image as PILImage
         pil = PILImage.open(logo_path).convert("RGB")
         pil.thumbnail((44, 44))
         buf = io.BytesIO()
         pil.save(buf, format="PNG")
-        buf.seek(0)
-        fd, path = tempfile.mkstemp(suffix=".png")
-        with os.fdopen(fd, "wb") as f:
-            f.write(buf.getvalue())
-        if os.path.exists(logo_path) and logo_path != path:
+        logo_bytes = buf.getvalue()
+        if os.path.exists(logo_path):
             try:
                 os.remove(logo_path)
             except Exception:
                 pass
-        return path
+        return logo_bytes
     except Exception:
         return None
 
@@ -378,7 +373,15 @@ async def boletim_pdf(student_id: int, current_user=Depends(require_permission("
     school = settings.school_name if settings and settings.school_name else "Escola de Inglês"
     cnpj = settings.cnpj if settings and settings.cnpj else ""
     issue_date = date.today().strftime("%d/%m/%Y")
-    logo_path = _school_logo(settings)
+    logo_bytes = _school_logo(settings)
+    import tempfile as _tmp
+    fd, logo_path = _tmp.mkstemp(suffix=".png")
+    os.close(fd)
+    if logo_bytes:
+        with open(logo_path, "wb") as _lf:
+            _lf.write(logo_bytes)
+    else:
+        logo_path = None
 
     stream = io.BytesIO()
     doc = SimpleDocTemplate(stream, pagesize=A4,
@@ -527,6 +530,7 @@ async def turma_boletim_pdf(class_group_id: int, current_user=Depends(require_pe
     from reportlab.lib.enums import TA_CENTER
     from fastapi.responses import StreamingResponse
     import io, os
+    import tempfile as _tmp
 
     data = await get_turma_boletim(class_group_id, current_user, db)
 
@@ -535,7 +539,14 @@ async def turma_boletim_pdf(class_group_id: int, current_user=Depends(require_pe
     school = settings.school_name if settings and settings.school_name else "Escola de Inglês"
     cnpj = settings.cnpj if settings and settings.cnpj else ""
     issue_date = date.today().strftime("%d/%m/%Y")
-    logo_path = _school_logo(settings)
+    logo_bytes = _school_logo(settings)
+    fd2, logo_path2 = _tmp.mkstemp(suffix=".png")
+    os.close(fd2)
+    if logo_bytes:
+        with open(logo_path2, "wb") as _lf2:
+            _lf2.write(logo_bytes)
+    else:
+        logo_path2 = None
 
     size = landscape(A4)
     stream = io.BytesIO()
@@ -545,7 +556,7 @@ async def turma_boletim_pdf(class_group_id: int, current_user=Depends(require_pe
         title=f"Mapa de Notas - {cg['name']}")
     doc.addPageTemplates([PageTemplate(id='main',
         frames=[Frame(30, 50, size[0] - 60, size[1] - 130, id='frame')],
-        onPage=_make_decorations(school, cnpj, "Mapa de Notas", logo_path, issue_date))])
+        onPage=_make_decorations(school, cnpj, "Mapa de Notas", logo_path2, issue_date))])
 
     styles = getSampleStyleSheet()
     center = ParagraphStyle("Center", parent=styles['Normal'], alignment=TA_CENTER)
@@ -657,9 +668,9 @@ async def turma_boletim_pdf(class_group_id: int, current_user=Depends(require_pe
     try:
         doc.build(elements)
     finally:
-        if logo_path:
+        if logo_path2:
             try:
-                os.remove(logo_path)
+                os.remove(logo_path2)
             except Exception:
                 pass
 

@@ -20,11 +20,9 @@ function formatAction(action: string) {
   };
 }
 
-function formatDate(iso?: string) {
-  if (!iso) return '-';
-  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z');
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+function formatDate(dateStr?: string) {
+  if (!dateStr) return '-';
+  return new Date(dateStr.replace('Z', '')).toLocaleString('pt-BR');
 }
 
 export default function Audit() {
@@ -37,6 +35,7 @@ export default function Audit() {
     setLoading(true);
     auditAPI.list({ skip: page * PAGE_SIZE, limit: PAGE_SIZE })
       .then(({ data }) => { setLogs(data.logs || []); setTotal(data.total || 0); })
+      .catch(() => { setLogs([]); setTotal(0); })
       .finally(() => setLoading(false));
   }, [page]);
 

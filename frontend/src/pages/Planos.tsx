@@ -63,6 +63,7 @@ export default function Planos() {
     setLoading(true);
     Promise.all([plansAPI.list(), coursesAPI.list()])
       .then(([p, c]) => { setPlans(p.data); setCourses(c.data); })
+      .catch(() => { setPlans([]); setCourses([]); })
       .finally(() => setLoading(false));
   };
 

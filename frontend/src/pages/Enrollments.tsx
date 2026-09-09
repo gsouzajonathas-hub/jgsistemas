@@ -13,7 +13,7 @@ export default function Enrollments() {
 
   const load = () => {
     setLoading(true);
-    enrollmentsAPI.list({ status: statusFilter }).then(({ data }) => { setEnrollments(data.enrollments); setTotal(data.total); }).finally(() => setLoading(false));
+    enrollmentsAPI.list({ status: statusFilter }).then(({ data }) => { setEnrollments(data.enrollments); setTotal(data.total); }).catch(() => { setEnrollments([]); setTotal(0); }).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [statusFilter]);
@@ -138,7 +138,7 @@ function EnrollmentModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
             <select value={form.class_group_id} onChange={e => setForm(f => ({ ...f, class_group_id: parseInt(e.target.value) }))}
               className="w-full px-4 py-2.5 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-white/5 text-slate-900 dark:text-white outline-none text-sm">
               <option value={0}>Selecione a turma</option>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.current_count}/{c.max_capacity})</option>)}
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.current_count || 0}/{c.max_capacity || 0})</option>)}
             </select>
           </div>
           <div>

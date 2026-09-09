@@ -224,15 +224,15 @@ export default function Boletim() {
           <div className="flex items-center gap-3 pt-5">
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Users className="w-4 h-4" />
-              {classBoletim.class_group.name}
+              {classBoletim.class_name}
             </div>
             <Badge tone="indigo">
               <GraduationCap className="w-3.5 h-3.5" />
-              {classBoletim.class_group.level || 'Sem nível'}
+              {classBoletim.level || 'Sem nível'}
             </Badge>
             <Badge tone="blue">
               <Users className="w-3.5 h-3.5" />
-              {classBoletim.students.length} alunos
+              {classBoletim.rows.length} alunos
             </Badge>
           </div>
         )}
@@ -268,7 +268,7 @@ export default function Boletim() {
         <div className="flex justify-center py-12"><Spinner /></div>
       )}
 
-      {mode === 'class' && !loadingClass && classBoletim && classBoletim.students.length === 0 && (
+      {mode === 'class' && !loadingClass && classBoletim && classBoletim.rows.length === 0 && (
         <EmptyState
           icon={<Users className="w-10 h-10 text-slate-300 dark:text-slate-600" />}
           title="Sem alunos na turma"
@@ -276,16 +276,16 @@ export default function Boletim() {
         />
       )}
 
-      {mode === 'class' && !loadingClass && classBoletim && classBoletim.students.length > 0 && (
+      {mode === 'class' && !loadingClass && classBoletim && classBoletim.rows.length > 0 && (
         <div className="card-surface p-5">
           <div className="flex flex-wrap gap-x-5 gap-y-1 mb-5 text-sm text-slate-500">
-            {classBoletim.class_group.course_name && (
+            {classBoletim.class_group?.course_name && (
               <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" />{classBoletim.class_group.course_name}</span>
             )}
-            {classBoletim.class_group.teacher_name && (
+            {classBoletim.class_group?.teacher_name && (
               <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5" />{classBoletim.class_group.teacher_name}</span>
             )}
-            {classBoletim.class_group.weekdays && (
+            {classBoletim.class_group?.weekdays && (
               <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{classBoletim.class_group.weekdays} {classBoletim.class_group.start_time}-{classBoletim.class_group.end_time}</span>
             )}
           </div>
@@ -302,11 +302,11 @@ export default function Boletim() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                {classBoletim.students.map((row: any) => (
-                  <tr key={row.student.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                {classBoletim.rows.map((row: any) => (
+                  <tr key={row.student_id} className="hover:bg-slate-50 dark:hover:bg-white/5">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{row.student.full_name}</p>
-                      <p className="text-xs text-slate-400">{row.student.email || row.student.phone || '—'}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{row.student_name}</p>
+                      <p className="text-xs text-slate-400">{row.student_email || row.student_phone || '—'}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-slate-600">{row.evaluations.length}</td>
                     <td className="px-4 py-3 text-sm text-right font-semibold text-slate-900 dark:text-white">{row.average}%</td>

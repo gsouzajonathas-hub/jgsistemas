@@ -10,6 +10,15 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState('');
 
+  const colorMap: Record<string, string> = {
+    blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600',
+    green: 'bg-green-100 dark:bg-green-900/30 text-green-600',
+    red: 'bg-red-100 dark:bg-red-900/30 text-red-600',
+    yellow: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600',
+    purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600',
+    gray: 'bg-gray-100 dark:bg-gray-900/30 text-gray-600',
+  };
+
   const reportTypes = [
     { id: 'alunos', title: 'Alunos Ativos', description: 'Lista completa de todos os alunos ativos no sistema', icon: Users, color: 'blue' },
     { id: 'inadimplentes', title: 'Inadimplentes', description: 'Alunos com mensalidades vencidas', icon: AlertTriangle, color: 'red' },
@@ -85,8 +94,8 @@ export default function Reports() {
             <div key={report.id} className={`bg-white dark:bg-[#111a2e] rounded-xl border transition-all ${isActive ? 'border-primary-500 ring-2 ring-primary-200 dark:ring-primary-900/50 shadow-lg' : 'border-slate-200 dark:border-white/10 hover:shadow-lg'} `}>
               <div className="p-6 cursor-pointer" onClick={() => fetchReport(report.id)}>
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-${report.color}-100 dark:bg-${report.color}-900/30`}>
-                    <report.icon className={`w-5 h-5 text-${report.color}-600 dark:text-${report.color}-400`} />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorMap[report.color] || colorMap.gray}`}>
+                    <report.icon className="w-5 h-5" />
                   </div>
                   {isActive ? <ChevronLeft className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                 </div>

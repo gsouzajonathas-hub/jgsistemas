@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { attendanceAPI, classesAPI, studentsAPI } from '../services/api';
+import { attendanceAPI, classesAPI, studentsAPI, enrollmentsAPI } from '../services/api';
 import { CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
 
 export default function Attendance() {
@@ -10,18 +10,31 @@ export default function Attendance() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => { classesAPI.list().then(({ data }) => setClasses(data)); }, []);
+  useEffect(() => { classesAPI.list().then(({ data }) => setClasses(data)).catch(() => setClasses([])); }, []);
 
   useEffect(() => {
     if (selectedClass) {
-      studentsAPI.list({ limit: 100 }).then(({ data }) => {
-        const filtered = data.students || [];
-        setStudents(filtered);
-        const initial: Record<number, string> = {};
-        filtered.forEach((s: any) => { initial[s.id] = 'present'; });
-        setRecords(initial);
-      });
+      enrollmentsAPI.list({ class_group_id: selectedClass, status: 'active', limit: 500 })
+        .then(({ data }) => {
+          const seen = new Set<number>();
+          const filtered = (data.enrollments || [])
+            .filter((e: any) => { if (seen.has(e.student_id)) return false; seen.add(e.student_id); return true; })
+            .map((e: any) => ({ id: e.student_id, full_name: e.student_name || `Aluno #${e.student_id}` }));
+          setStudents(filtered);
+          const initial: Record<number, string> = {};
+          filtered.forEach((s: any) => { initial[s.id] = 'present'; });
+          setRecords(initial);
+        })
+        .catch(() => setStudents([]));
+      return;
     }
+    studentsAPI.list({ limit: 100 }).then(({ data }) => {
+      const filtered = data.students || [];
+      setStudents(filtered);
+      const initial: Record<number, string> = {};
+      filtered.forEach((s: any) => { initial[s.id] = 'present'; });
+      setRecords(initial);
+    }).catch(() => setStudents([]));
   }, [selectedClass]);
 
   const setStatus = (studentId: number, status: string) => {

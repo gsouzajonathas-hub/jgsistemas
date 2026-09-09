@@ -28,7 +28,7 @@ export default function Courses() {
 
   const load = () => {
     setLoading(true);
-    coursesAPI.list().then(({ data }) => setCourses(data || [])).finally(() => setLoading(false));
+    coursesAPI.list().then(({ data }) => setCourses(data || [])).catch(() => setCourses([])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

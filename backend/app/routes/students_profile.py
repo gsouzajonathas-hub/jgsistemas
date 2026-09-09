@@ -90,7 +90,7 @@ async def get_student_profile(student_id: int, current_user=Depends(require_perm
             "receipt_number": pay_map[i.id].receipt_number if i.id in pay_map else None
         } for i in inst_rows],
         "files": [{
-            "id": f.id, "file_name": f.file_name, "file_path": f.file_path,
+            "id": f.id, "file_name": f.file_name,
             "category": f.category, "created_at": f.created_at.isoformat() if f.created_at else None
         } for f in files.scalars().all()]
     }
@@ -124,12 +124,23 @@ async def student_sheet_pdf(student_id: int, current_user=Depends(require_permis
         if plan:
             plan_name = plan.name
 
+    logo_bytes = _school_logo(settings)
+    import tempfile as _tmp
+    import os as _os
+    fd, logo_path = _tmp.mkstemp(suffix=".png")
+    _os.close(fd)
+    if logo_bytes:
+        with open(logo_path, "wb") as _lf:
+            _lf.write(logo_bytes)
+    else:
+        logo_path = None
+
     data = {
         "school": {
             "name": getattr(settings, "school_name", "") or "Escola",
             "cnpj": getattr(settings, "cnpj", ""), "address": getattr(settings, "address", ""),
             "phone": getattr(settings, "phone", ""), "email": getattr(settings, "email", ""),
-            "logo": _school_logo(settings),
+            "logo": logo_path,
         },
         "enrollment_number": f"{student.id:05d}",
         "student": {
@@ -154,6 +165,11 @@ async def student_sheet_pdf(student_id: int, current_user=Depends(require_permis
     }
 
     pdf_bytes = build_student_sheet_pdf(data)
+    if logo_path:
+        try:
+            _os.unlink(logo_path)
+        except OSError:
+            pass
     fname = f"Ficha_{student.full_name.replace(' ', '_')}.pdf"
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf",
                              headers={"Content-Disposition": f'inline; filename="{fname}"'})

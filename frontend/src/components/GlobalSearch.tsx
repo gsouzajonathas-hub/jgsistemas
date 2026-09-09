@@ -29,7 +29,10 @@ export default function GlobalSearch() {
     setQuery('');
   };
 
-  const badge = (_type: string) => 'A';
+  const badge = (type: string) => {
+    const map: Record<string, string> = { student: 'A', teacher: 'P', course: 'C', class: 'T' };
+    return map[type] || 'A';
+  };
 
   return (
     <>

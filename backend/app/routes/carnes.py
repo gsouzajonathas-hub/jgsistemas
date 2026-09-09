@@ -222,7 +222,6 @@ async def list_carnets(
 
     total = len(out)
     items = out[skip:skip + limit] if limit else out
-    await db.commit()
     return {"carnets": items, "total": total}
 
 

@@ -354,6 +354,11 @@ async def cancel_contract(contract_id: int, current_user=Depends(require_permiss
     if not ct:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
     ct.status = "cancelled"
+    await db.execute(
+        update(Installment)
+        .where(Installment.contract_id == ct.id, Installment.status.in_(["pending", "overdue"]))
+        .values(status="cancelled")
+    )
     await log_audit(db, current_user, "contract.cancel", "financial_contract", ct.id, f"Contrato #{ct.id} cancelado")
     await db.commit()
     return {"message": "Contrato cancelado", "status": ct.status}
@@ -385,10 +390,20 @@ async def contract_pdf(contract_id: int, current_user=Depends(require_permission
     school_city = ""
     if settings and getattr(settings, "address", ""):
         school_city = [p.strip() for p in str(settings.address).split(",") if p.strip()][-1] if "," in str(settings.address) else ""
+    logo_bytes = _school_logo(settings)
+    import os as _os
+    import tempfile as _tmp
+    fd, logo_path = _tmp.mkstemp(suffix=".png")
+    _os.close(fd)
+    if logo_bytes:
+        with open(logo_path, "wb") as _lf:
+            _lf.write(logo_bytes)
+    else:
+        logo_path = None
     school = {"name": getattr(settings, "school_name", "") or "Escola",
               "cnpj": getattr(settings, "cnpj", ""), "address": getattr(settings, "address", ""),
               "phone": getattr(settings, "phone", ""), "email": getattr(settings, "email", ""),
-              "city": school_city, "logo": _school_logo(settings)}
+              "city": school_city, "logo": logo_path}
 
     address_full = ", ".join(p for p in [
         getattr(stu, "street", ""), f"nº {stu.number}" if getattr(stu, "number", None) else "",
@@ -425,6 +440,12 @@ async def contract_pdf(contract_id: int, current_user=Depends(require_permission
     })
 
     fname = f"Contrato_{(stu.full_name if stu else 'aluno').replace(' ', '_')}_{ct.id}.pdf"
+    import os as _os
+    if logo_path:
+        try:
+            _os.unlink(logo_path)
+        except OSError:
+            pass
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf",
                              headers={"Content-Disposition": f'inline; filename="{fname}"'})
 
@@ -461,12 +482,8 @@ async def list_installments(student_id: int = None, status: str = "", month: str
         student_map = {s.id: s.full_name for s in stu_r.scalars().all()}
 
     out = []
-    changed = False
     for i in installments:
         eff = effective_installment_status(i, today)
-        if i.status != eff:
-            i.status = eff
-            changed = True
         if status and eff != status:
             continue
         payment = payment_map.get(i.id)
@@ -481,8 +498,6 @@ async def list_installments(student_id: int = None, status: str = "", month: str
             "payment_id": payment.id if payment else None,
             "receipt_number": payment.receipt_number if payment else None
         })
-    if changed:
-        await db.commit()
 
     total = len(out)
     items = out[skip:skip + limit] if limit else out
@@ -574,10 +589,7 @@ async def register_payment(data: PaymentSchema, current_user=Depends(require_per
     db.add(payment)
     await db.flush()
 
-    count = (await db.execute(
-        select(func.count()).select_from(Payment).where(Payment.payment_date >= date(pay_date.year, 1, 1))
-    )).scalar() or 0
-    payment.receipt_number = f"REC-{pay_date.year}-{count:05d}"
+    payment.receipt_number = f"REC-{pay_date.year}-{payment.id:05d}"
 
     await db.commit()
     return {
@@ -628,17 +640,6 @@ async def financial_dashboard(month: str = "", current_user=Depends(require_perm
     y, m = int(month[:4]), int(month[5:7])
     month_start = date(y, m, 1)
     month_end = date(y, m, _last_day_of_month(y, m))
-
-    await db.execute(
-        update(Installment)
-        .where(
-            Installment.status == "pending",
-            Installment.due_date < today,
-            Installment.paid_date.is_(None)
-        )
-        .values(status="overdue")
-    )
-    await db.commit()
 
     total_revenue_r, total_received_r, total_to_due_r, total_overdue_r, \
         total_expected_r, count_paid_r, count_pending_r, count_overdue_r = await asyncio.gather(

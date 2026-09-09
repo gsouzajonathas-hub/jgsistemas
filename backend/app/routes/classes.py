@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
 from app.models.class_group import ClassGroup
+from app.models.enrollment import Enrollment
 from app.models.teacher import Teacher
 from app.models.course import Course
 from app.utils.permissions import require_permission
@@ -103,6 +104,11 @@ async def delete_class(class_id: int, request: Request, current_user=Depends(req
     cg = result.scalar_one_or_none()
     if not cg:
         raise HTTPException(status_code=404, detail="Turma não encontrada")
+    active = (await db.execute(select(func.count()).select_from(Enrollment).where(
+        Enrollment.class_group_id == cg.id, Enrollment.status == "active"
+    ))).scalar() or 0
+    if active > 0:
+        raise HTTPException(status_code=400, detail=f"Turma possui {active} matrícula(s) ativa(s). Desative-as primeiro.")
     await log_audit(db, current_user, "class.delete", "class_group", class_id,
                     details=f"name={cg.name} course={cg.course_id} teacher={cg.teacher_id}",
                     ip_address=client_ip(request))

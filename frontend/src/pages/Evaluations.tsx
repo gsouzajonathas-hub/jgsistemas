@@ -23,7 +23,7 @@ export default function Evaluations() {
 
   const load = () => {
     setLoading(true);
-    evaluationsAPI.list().then(({ data }) => setEvals(data)).finally(() => setLoading(false));
+    evaluationsAPI.list().then(({ data }) => setEvals(data)).catch(() => setEvals([])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

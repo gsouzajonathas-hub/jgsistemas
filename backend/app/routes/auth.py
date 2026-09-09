@@ -239,6 +239,9 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    ip = client_ip(request)
+    if is_rate_limited(f"change_password:{ip}", limit=10, window_seconds=300):
+        raise HTTPException(status_code=429, detail="Muitas tentativas. Aguarde alguns minutos.")
     if not verify_password(req.current_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Senha atual incorreta")
     validate_password(req.new_password)

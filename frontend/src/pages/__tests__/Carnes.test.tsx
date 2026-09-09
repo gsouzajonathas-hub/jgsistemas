@@ -128,7 +128,7 @@ describe('Carnes', () => {
     await screen.findByRole('heading', { level: 1, name: 'Carnês' });
 
     fireEvent.click(screen.getByRole('button', { name: /Novo Carnê/i }));
-    expect(await screen.findByText('Novo Carnê')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('Buscar aluno por nome...')).toBeInTheDocument();
 
     const searchInput = screen.getByPlaceholderText('Buscar aluno por nome...');
     fireEvent.change(searchInput, { target: { value: 'João' } });

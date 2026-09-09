@@ -1,6 +1,5 @@
 import io
 import os
-import tempfile
 from datetime import date
 
 from reportlab.lib import colors
@@ -107,7 +106,7 @@ def valor_por_extenso(valor: float) -> str:
     return " e ".join(partes) if partes else "zero reais"
 
 
-def _school_logo(settings) -> str:
+def _school_logo(settings):
     if not (settings and settings.logo_url):
         return None
     logo_path = storage.download_logo(settings.logo_url)
@@ -119,17 +118,13 @@ def _school_logo(settings) -> str:
         pil.thumbnail((60, 60))
         buf = io.BytesIO()
         pil.save(buf, format="PNG")
-        buf.seek(0)
-        fd, path = tempfile.mkstemp(suffix=".png")
-        with os.fdopen(fd, "wb") as f:
-            f.write(buf.getvalue())
-        # remove o download bruto (se ainda existir) para não vazar temporário
-        if os.path.exists(logo_path) and logo_path != path:
+        logo_bytes = buf.getvalue()
+        if os.path.exists(logo_path):
             try:
                 os.remove(logo_path)
             except Exception:
                 pass
-        return path
+        return logo_bytes
     except Exception:
         return None
 
@@ -244,7 +239,8 @@ def build_receipt_pdf(payment, installment, student, settings) -> bytes:
     school_phone = settings.phone if settings and settings.phone else ""
     school_email = settings.email if settings and settings.email else ""
     issue_date = date.today().strftime("%d/%m/%Y")
-    logo_path = _school_logo(settings)
+    logo_bytes = _school_logo(settings)
+    logo_path = io.BytesIO(logo_bytes) if logo_bytes else None
     receipt_number = payment.receipt_number or f"REC-{payment.id:06d}"
     paid_date = payment.payment_date.strftime("%d/%m/%Y")
     due_date = installment.due_date.strftime("%d/%m/%Y")
@@ -481,9 +477,4 @@ def build_receipt_pdf(payment, installment, student, settings) -> bytes:
         elements.append(Paragraph("  |  ".join(contact_parts), center_small))
 
     doc.build(elements)
-    if logo_path:
-        try:
-            os.unlink(logo_path)
-        except OSError:
-            pass
     return stream.getvalue()

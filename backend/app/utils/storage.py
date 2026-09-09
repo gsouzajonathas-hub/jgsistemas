@@ -80,8 +80,13 @@ def ensure_buckets() -> dict:
         try:
             storage.create_bucket(name, options=opts)
             result[name] = "created"
-        except Exception:
-            result[name] = "exists"
+        except Exception as e:
+            import logging
+            if getattr(e, "statusCode", None) == 409:
+                result[name] = "exists"
+            else:
+                logging.getLogger(__name__).warning("Falha ao criar bucket '%s': %s", name, e)
+                result[name] = "exists"
     return {"enabled": True, "buckets": result}
 
 

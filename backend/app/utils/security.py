@@ -74,7 +74,15 @@ def _cleanup(now: float):
 
 
 def is_rate_limited(key: str, limit: int, window_seconds: float) -> bool:
-    """Sliding-window limiter em memória por chave (ex.: IP)."""
+    """Sliding-window limiter em memória por chave (ex.: IP).
+
+    RATE_LIMIT_PER_MINUTE <= 0 desliga o rate limit em toda a aplicação (ambiente de teste).
+    """
+    try:
+        if int(os.getenv("RATE_LIMIT_PER_MINUTE", "60")) <= 0:
+            return False
+    except ValueError:
+        pass
     now = time.monotonic()
     _cleanup(now)
     bucket = _requests[key]
@@ -87,7 +95,7 @@ def is_rate_limited(key: str, limit: int, window_seconds: float) -> bool:
 
 def client_ip(request) -> str:
     forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
+    if forwarded and os.getenv("ENVIRONMENT", "development").lower() == "production":
         return forwarded.split(",")[0].strip()
     if request.client and request.client.host:
         return request.client.host

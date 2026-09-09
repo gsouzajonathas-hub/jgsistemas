@@ -20,14 +20,23 @@ _has_pg_block = bool(PG_HOST and PG_PASSWORD)
 _is_postgres = DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://")
 _is_sqlite = DATABASE_URL.startswith("sqlite://")
 
-if _has_pg_block:
-    # Prioriza o bloco PG* (explícito e robusto para senhas especiais).
+# Um DATABASE_URL explícito (ex.: teste com SQLite, deploy com connection string)
+# tem precedência sobre o bloco PG*. O bloco PG* só é usado quando não há
+# DATABASE_URL definido — mantém o comportamento de produção no Render.
+if _has_pg_block and not DATABASE_URL:
+    # Usa o bloco PG* (robusto para senhas especiais).
+    try:
+        _pg_port = int(os.getenv("PGPORT", "5432").strip())
+    except ValueError:
+        import logging
+        logging.getLogger(__name__).warning("PGPORT inválido, usando 5432")
+        _pg_port = 5432
     _pg_url = URL.create(
         drivername="postgresql+asyncpg",
         username=os.getenv("PGUSER", "postgres").strip(),
         password=PG_PASSWORD,
         host=PG_HOST,
-        port=int(os.getenv("PGPORT", "5432").strip()),
+        port=_pg_port,
         database=(os.getenv("PGDATABASE", "postgres").strip() or "postgres"),
     )
     async_url = _pg_url

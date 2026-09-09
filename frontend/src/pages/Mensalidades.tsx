@@ -14,6 +14,7 @@ export default function Mensalidades() {
   const [statusFilter, setStatusFilter] = useState('');
   const [dashboard, setDashboard] = useState<any>(null);
   const [paying, setPaying] = useState<Installment | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -30,6 +31,18 @@ export default function Mensalidades() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      await financialAPI.generateMonth({ month });
+      await load();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -121,6 +134,10 @@ export default function Mensalidades() {
             <option value="overdue">Em Atraso</option>
             <option value="paid">Pagos</option>
           </select>
+          <button onClick={handleGenerate} disabled={generating}
+            className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+            {generating ? 'Gerando...' : 'Gerar Mensalidades'}
+          </button>
         </div>
       </div>
 

@@ -60,17 +60,25 @@ async def _run_alembic_migrations():
     if current_rev is not None and current_rev == head_rev:
         return
 
+    import logging
+    _logger = logging.getLogger(__name__)
     subcommand = "stamp" if existing_tables and "alembic_version" not in existing_tables else "upgrade"
-    proc = await _asyncio.create_subprocess_exec(
-        sys.executable, "-m", "alembic", "-c", str(backend_dir / "alembic.ini"), subcommand, "head",
-        cwd=str(backend_dir),
-        stdout=_asyncio.subprocess.PIPE,
-        stderr=_asyncio.subprocess.STDOUT,
-    )
-    output = (await proc.stdout.read()).decode(errors="replace")
-    await proc.wait()
-    if proc.returncode != 0:
-        raise RuntimeError(f"Falha ao aplicar migrações do banco (alembic {subcommand} head):\n{output}")
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        proc = await _asyncio.create_subprocess_exec(
+            sys.executable, "-m", "alembic", "-c", str(backend_dir / "alembic.ini"), subcommand, "head",
+            cwd=str(backend_dir),
+            stdout=_asyncio.subprocess.PIPE,
+            stderr=_asyncio.subprocess.STDOUT,
+        )
+        output = (await proc.stdout.read()).decode(errors="replace")
+        await proc.wait()
+        if proc.returncode == 0:
+            return
+        if attempt < max_attempts:
+            _logger.warning("Alembic falhou (tentativa %d/%d), retry em 5s...", attempt, max_attempts)
+            await _asyncio.sleep(5)
+    _logger.warning("Alembic falhou após %d tentativas. App iniciando em modo degradado (sem migrações). Erro: %s", max_attempts, output)
 
 
 @asynccontextmanager
@@ -136,6 +144,9 @@ async def lifespan(app):
     print(f"[startup] E-mail transacional via {_email_backend}", flush=True)
 
     yield
+
+    from app.database import engine
+    await engine.dispose()
 
 
 app = FastAPI(
@@ -269,6 +280,9 @@ async def serve_spa(full_path: str):
             },
         )
     file_path = os.path.join(FRONTEND_DIR, full_path)
+    file_path = os.path.normpath(file_path)
+    if not file_path.startswith(os.path.normpath(FRONTEND_DIR)):
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
     if full_path and os.path.isfile(file_path):
         return FileResponse(file_path)
     return FileResponse(_INDEX_HTML)

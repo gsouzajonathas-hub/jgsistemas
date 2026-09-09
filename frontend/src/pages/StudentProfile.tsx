@@ -21,11 +21,13 @@ export default function StudentProfile() {
     if (id) return studentProfileAPI.get(parseInt(id)).then(({ data }) => setData(data));
   };
 
-  useEffect(() => {
-    if (id) {
-      studentProfileAPI.get(parseInt(id)).then(({ data }) => setData(data)).finally(() => setLoading(false));
-    }
-  }, [id]);
+useEffect(() => {
+      if (id) {
+        studentProfileAPI.get(parseInt(id)).then(({ data }) => setData(data))
+          .catch(() => setData(null))
+          .finally(() => setLoading(false));
+      }
+    }, [id]);
 
   if (loading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-[3px] border-primary-600/20 border-t-primary-600 dark:border-primary-400/20 dark:border-t-primary-400" /></div>;
   if (!data || data.error) return <div className="text-center py-12 text-slate-400">{data?.error || 'Aluno não encontrado'}</div>;

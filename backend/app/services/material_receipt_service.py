@@ -1,5 +1,4 @@
 import io
-import os
 
 from datetime import date
 
@@ -101,7 +100,8 @@ def build_material_receipt_pdf(sale, material, student, settings, receipt_number
     school_phone = settings.phone if settings and settings.phone else ""
     school_email = settings.email if settings and settings.email else ""
     issue_date = date.today().strftime("%d/%m/%Y")
-    logo_path = _school_logo(settings)
+    logo_bytes = _school_logo(settings)
+    logo_path = io.BytesIO(logo_bytes) if logo_bytes else None
     # Numeração REC-{ano}-{contagem:05d} alimentada pela rota (padrão do Financeiro);
     # fallback MAT-{id} mantido para compatibilidade.
     receipt_number = receipt_number or f"MAT-{sale.id:06d}"
@@ -320,9 +320,4 @@ def build_material_receipt_pdf(sale, material, student, settings, receipt_number
         elements.append(Paragraph("  |  ".join(contact_parts), center_small))
 
     doc.build(elements)
-    if logo_path:
-        try:
-            os.unlink(logo_path)
-        except OSError:
-            pass
     return stream.getvalue()

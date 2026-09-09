@@ -16,7 +16,7 @@ export default function Schedule() {
     setLoading(true);
     const m = currentMonth.getMonth() + 1;
     const y = currentMonth.getFullYear();
-    scheduleAPI.list({ month: m, year: y }).then(({ data }) => setEvents(data)).finally(() => setLoading(false));
+    scheduleAPI.list({ month: m, year: y }).then(({ data }) => setEvents(data)).catch(() => setEvents([])).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [currentMonth]);
@@ -116,7 +116,7 @@ export default function Schedule() {
             {events.slice(0, 10).map(e => {
               const config = typeConfig[e.event_type] || typeConfig.aula;
               return (
-                <div key={e.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
+                <div key={e.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg group">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 ${config.color} rounded-lg flex items-center justify-center`}>
                       <config.icon className="w-4 h-4 text-white" />
