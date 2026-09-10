@@ -127,6 +127,9 @@ async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_per
     if not material:
         raise HTTPException(status_code=404, detail="Material não encontrado")
 
+    if data.quantity > material.stock:
+        raise HTTPException(status_code=400, detail=f"Estoque insuficiente. Disponível: {material.stock}")
+
     unit_price = data.unit_price if data.unit_price > 0 else material.price
     total_price = unit_price * data.quantity
 
@@ -140,9 +143,6 @@ async def create_sale(data: MaterialSaleSchema, current_user=Depends(require_per
         notes=data.notes
     )
     db.add(sale)
-
-    if data.quantity > material.stock:
-        raise HTTPException(status_code=400, detail=f"Estoque insuficiente. Disponível: {material.stock}")
 
     material.stock = max(0, material.stock - data.quantity)
 

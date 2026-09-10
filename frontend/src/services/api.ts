@@ -127,6 +127,7 @@ export const carnesAPI = {
 export const scheduleAPI = {
   list: (params?: { month?: number; year?: number }) => api.get('/schedule', { params }),
   create: (data: { title: string; event_type: string; date: string; start_time?: string; end_time?: string; description?: string; color?: string }) => api.post('/schedule', data),
+  update: (id: number, data: { title: string; event_type: string; date: string; start_time?: string; end_time?: string; description?: string; color?: string }) => api.put(`/schedule/${id}`, data),
   delete: (id: number) => api.delete(`/schedule/${id}`),
 };
 

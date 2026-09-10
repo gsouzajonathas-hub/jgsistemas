@@ -21,7 +21,7 @@ export default function Students() {
     setLoading(true);
     studentsAPI.list({ skip: page * 20, limit: 20, search, status: statusFilter })
       .then(({ data }) => { setStudents(data.students); setTotal(data.total); })
-      .catch(() => {})
+      .catch(() => alert('Erro ao carregar alunos'))
       .finally(() => setLoading(false));
   };
 
@@ -180,8 +180,8 @@ function StudentModal({ student, onClose, onSaved }: { student: Student | null; 
         await studentsAPI.create(data);
         onSaved();
       }
-    } catch (err) {
-      alert('Erro ao salvar');
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Erro ao salvar');
     } finally {
       setSaving(false);
     }

@@ -17,7 +17,7 @@
 | Fase | Status |
 |---|---|
 | F1 INGESTÃO | ✅ base registrada |
-| F2 DESCOBERTA | pendente |
+| F2 DESCOBERTA | ✅ mapeamento concluído (2026-09-10) — 14 itens corrigidos, 10 pendentes, 7 lacunas estruturais, 4 de UX |
 | F3 PLANO | pendente |
 | F4 ORQUESTRADOR | pendente |
 | F5 AUDITORIA | pendente |

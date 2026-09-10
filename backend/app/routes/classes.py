@@ -41,6 +41,13 @@ def _class_to_dict(c, teacher_name="", course_name="") -> dict:
     }
 
 
+@router.get("/count")
+async def count_classes(current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import func
+    result = await db.execute(select(func.count()).select_from(ClassGroup))
+    return {"count": result.scalar()}
+
+
 @router.get("")
 async def list_classes(skip: int = 0, limit: int = 50, current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ClassGroup).order_by(ClassGroup.name).offset(skip).limit(limit))
@@ -68,6 +75,8 @@ async def create_class(class_data: ClassSchema, request: Request, current_user=D
     from datetime import time
     data["start_time"] = time.fromisoformat(data["start_time"]) if data.get("start_time") else time(8, 0)
     data["end_time"] = time.fromisoformat(data["end_time"]) if data.get("end_time") else time(9, 0)
+    if data["start_time"] >= data["end_time"]:
+        raise HTTPException(status_code=400, detail="Horário de início deve ser anterior ao horário de término")
     cg = ClassGroup(**data)
     db.add(cg)
     await db.flush()
@@ -89,6 +98,8 @@ async def update_class(class_id: int, class_data: ClassSchema, request: Request,
     from datetime import time
     data["start_time"] = time.fromisoformat(data["start_time"]) if data.get("start_time") else time(8, 0)
     data["end_time"] = time.fromisoformat(data["end_time"]) if data.get("end_time") else time(9, 0)
+    if data["start_time"] >= data["end_time"]:
+        raise HTTPException(status_code=400, detail="Horário de início deve ser anterior ao horário de término")
     for k, v in data.items():
         setattr(cg, k, v)
     await log_audit(db, current_user, "class.update", "class_group", class_id,
@@ -115,10 +126,3 @@ async def delete_class(class_id: int, request: Request, current_user=Depends(req
     await db.delete(cg)
     await db.commit()
     return {"message": "Turma excluída com sucesso"}
-
-
-@router.get("/count")
-async def count_classes(current_user=Depends(require_permission("classes")), db: AsyncSession = Depends(get_db)):
-    from sqlalchemy import func
-    result = await db.execute(select(func.count()).select_from(ClassGroup))
-    return {"count": result.scalar()}

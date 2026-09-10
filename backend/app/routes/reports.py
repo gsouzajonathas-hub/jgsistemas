@@ -24,7 +24,9 @@ async def dashboard(current_user=Depends(require_permission("dashboard")), db: A
         db.execute(select(func.count()).select_from(Student)),
         db.execute(select(func.count()).select_from(Enrollment).where(Enrollment.status == "active")),
         db.execute(select(func.count()).select_from(Student).where(Student.status == "inactive")),
-        db.execute(select(func.count()).select_from(Installment).where(Installment.status == "overdue")),
+        db.execute(select(func.count()).select_from(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today)),
         db.execute(select(func.count()).select_from(Installment).where(
             Installment.status == "pending",
             Installment.due_date <= week_later,
@@ -85,8 +87,12 @@ async def inactive_students(current_user=Depends(require_permission("reports")),
 
 @router.get("/overdue")
 async def overdue_report(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
+    today = date.today()
     result = await db.execute(
-        select(Installment).where(Installment.status == "overdue").order_by(Installment.due_date)
+        select(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today
+        ).order_by(Installment.due_date)
     )
     installments = result.scalars().all()
 
@@ -138,6 +144,8 @@ async def enrollments_report(current_user=Depends(require_permission("reports"))
 
 @router.get("/financial")
 async def financial_report(current_user=Depends(require_permission("reports")), db: AsyncSession = Depends(get_db)):
+    from datetime import date
+    today = date.today()
     total_expected = await db.execute(
         select(func.sum(Installment.amount)).where(Installment.status != "cancelled")
     )
@@ -145,13 +153,22 @@ async def financial_report(current_user=Depends(require_permission("reports")), 
         select(func.sum(Installment.amount)).where(Installment.status == "paid")
     )
     total_overdue = await db.execute(
-        select(func.sum(Installment.amount)).where(Installment.status == "overdue")
+        select(func.sum(Installment.amount)).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today
+        )
     )
     count_pending = await db.execute(
-        select(func.count()).select_from(Installment).where(Installment.status == "pending")
+        select(func.count()).select_from(Installment).where(
+            Installment.status == "pending",
+            Installment.due_date >= today
+        )
     )
     count_overdue = await db.execute(
-        select(func.count()).select_from(Installment).where(Installment.status == "overdue")
+        select(func.count()).select_from(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today
+        )
     )
     count_paid = await db.execute(
         select(func.count()).select_from(Installment).where(Installment.status == "paid")
@@ -306,7 +323,13 @@ async def overdue_excel(current_user=Depends(require_permission("reports")), db:
     from fastapi.responses import StreamingResponse
     import io
 
-    result = await db.execute(select(Installment).where(Installment.status == "overdue").order_by(Installment.due_date))
+    today = date.today()
+    result = await db.execute(
+        select(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today
+        ).order_by(Installment.due_date)
+    )
     installments = result.scalars().all()
 
     student_ids = list({i.student_id for i in installments})
@@ -346,7 +369,13 @@ async def overdue_pdf(current_user=Depends(require_permission("reports")), db: A
     from datetime import date
     import io
 
-    result = await db.execute(select(Installment).where(Installment.status == "overdue").order_by(Installment.due_date))
+    today_date = date.today()
+    result = await db.execute(
+        select(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today_date
+        ).order_by(Installment.due_date)
+    )
     installments = result.scalars().all()
 
     student_ids = list({i.student_id for i in installments})
@@ -360,7 +389,7 @@ async def overdue_pdf(current_user=Depends(require_permission("reports")), db: A
     settings = settings_r.scalar_one_or_none()
     school_name = settings.school_name if settings else "Escola"
     school_cnpj = settings.cnpj if settings and settings.cnpj else ""
-    today_str = date.today().strftime("%d/%m/%Y")
+    today_str = today_date.strftime("%d/%m/%Y")
 
     total_overdue = sum(i.amount for i in installments)
 
@@ -420,10 +449,9 @@ async def overdue_pdf(current_user=Depends(require_permission("reports")), db: A
         Paragraph("Dias em atraso", hdr_center),
     ]
     data = [header_row]
-    today = date.today()
     for n, i in enumerate(installments, start=1):
         student_name = students.get(i.student_id, "—")
-        days_overdue = (today - i.due_date).days if i.due_date else 0
+        days_overdue = (today_date - i.due_date).days if i.due_date else 0
         data.append([
             Paragraph(str(n), cell_center),
             Paragraph(student_name, cell_style),

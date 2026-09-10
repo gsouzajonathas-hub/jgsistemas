@@ -784,7 +784,9 @@ function CarneDetailModal({ carne, onClose, onUpdated }: { carne: any; onClose: 
           a.download = `recibo-${resp.data.receipt_number || installmentId}.pdf`;
           a.click();
           URL.revokeObjectURL(url);
-        } catch {}
+        } catch {
+          console.warn('Falha ao baixar recibo do pagamento');
+        }
       }
       const { data: updated } = await carnesAPI.get(carne.id);
       setDetail(updated);
@@ -949,7 +951,9 @@ function CarneDetailModal({ carne, onClose, onUpdated }: { carne: any; onClose: 
                                     a.download = `recibo-${inst.receipt_number || inst.payment_id}.pdf`;
                                     a.click();
                                     URL.revokeObjectURL(url);
-                                  } catch {}
+                                  } catch {
+                                    alert('Erro ao baixar recibo');
+                                  }
                                 }}
                                 className="px-2 py-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 rounded text-xs font-medium flex items-center gap-1"
                               >

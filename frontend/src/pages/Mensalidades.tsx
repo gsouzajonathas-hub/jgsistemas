@@ -81,7 +81,9 @@ export default function Mensalidades() {
       a.download = `recibo-${receiptNumber || paymentId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {}
+    } catch {
+      alert('Erro ao baixar recibo');
+    }
   };
 
   const statusLabels: Record<string, string> = { paid: 'Pago', pending: 'Pendente', overdue: 'Vencido' };

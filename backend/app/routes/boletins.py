@@ -84,7 +84,7 @@ async def _student_class_block(student_id: int, cg, db: AsyncSession, course_inf
         select(func.count()).select_from(Attendance).where(
             Attendance.student_id == student_id,
             Attendance.class_group_id == cg.id,
-            Attendance.status == "present"
+            Attendance.status.in_(["present", "justified", "late"])
         )
     )
     absent = await db.execute(

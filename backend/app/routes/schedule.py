@@ -66,6 +66,31 @@ async def create_event(data: EventSchema, current_user=Depends(require_permissio
     return {"id": event.id, "message": "Evento criado com sucesso"}
 
 
+@router.put("/{event_id}")
+async def update_event(event_id: int, data: EventSchema, current_user=Depends(require_permission("schedule")), db: AsyncSession = Depends(get_db)):
+    from datetime import date, time as t
+    result = await db.execute(select(CalendarEvent).where(CalendarEvent.id == event_id))
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
+    d = data.model_dump()
+    if d.get("date"):
+        d["date"] = date.fromisoformat(d["date"])
+    if d.get("start_time"):
+        d["start_time"] = t.fromisoformat(d["start_time"])
+    else:
+        d["start_time"] = None
+    if d.get("end_time"):
+        d["end_time"] = t.fromisoformat(d["end_time"])
+    else:
+        d["end_time"] = None
+    for k, v in d.items():
+        setattr(event, k, v)
+    await log_audit(db, current_user, "event.update", "calendar_event", event_id, f"title={event.title}", ip_address=None)
+    await db.commit()
+    return {"message": "Evento atualizado com sucesso"}
+
+
 @router.delete("/{event_id}")
 async def delete_event(event_id: int, current_user=Depends(require_permission("schedule")), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CalendarEvent).where(CalendarEvent.id == event_id))

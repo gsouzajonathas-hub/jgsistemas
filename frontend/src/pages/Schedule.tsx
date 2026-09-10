@@ -9,6 +9,7 @@ export default function Schedule() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [deleteEventId, setDeleteEventId] = useState<number | null>(null);
 
@@ -58,7 +59,7 @@ export default function Schedule() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Agenda</h1>
           <p className="text-slate-500 text-sm">Calendário de eventos</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-medium flex items-center gap-2">
+        <button onClick={() => { setEditingEvent(null); setShowModal(true); }} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-medium flex items-center gap-2">
           <Plus className="w-4 h-4" /> Novo Evento
         </button>
       </div>
@@ -87,7 +88,7 @@ export default function Schedule() {
                 {dayEvents.slice(0, 3).map(e => {
                   const config = typeConfig[e.event_type] || typeConfig.aula;
                   return (
-                    <div key={e.id} className="flex items-center gap-1 mb-0.5 group">
+                    <div key={e.id} className="flex items-center gap-1 mb-0.5 group cursor-pointer" onClick={() => { setEditingEvent(e); setShowModal(true); }}>
                       <div className={`w-1.5 h-1.5 rounded-full ${config.color} flex-shrink-0`} />
                       <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{e.title}</span>
                     </div>
@@ -116,7 +117,7 @@ export default function Schedule() {
             {events.slice(0, 10).map(e => {
               const config = typeConfig[e.event_type] || typeConfig.aula;
               return (
-                <div key={e.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg group">
+                <div key={e.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg group cursor-pointer" onClick={() => { setEditingEvent(e); setShowModal(true); }}>
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 ${config.color} rounded-lg flex items-center justify-center`}>
                       <config.icon className="w-4 h-4 text-white" />
@@ -136,7 +137,7 @@ export default function Schedule() {
         </div>
       )}
 
-      {showModal && <EventModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />}
+      {showModal && <EventModal event={editingEvent} onClose={() => { setShowModal(false); setEditingEvent(null); }} onSaved={() => { setShowModal(false); setEditingEvent(null); load(); }} />}
 
       {deleteEventId !== null && (
         <ConfirmDialog
@@ -152,20 +153,35 @@ export default function Schedule() {
   );
 }
 
-function EventModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ title: '', event_type: 'aula', date: new Date().toISOString().split('T')[0], start_time: '', end_time: '', description: '', color: '#3B82F6' });
+function EventModal({ event, onClose, onSaved }: { event: CalendarEvent | null; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    title: event?.title || '',
+    event_type: event?.event_type || 'aula',
+    date: event?.date || new Date().toISOString().split('T')[0],
+    start_time: event?.start_time || '',
+    end_time: event?.end_time || '',
+    description: event?.description || '',
+    color: (event as any)?.color || '#3B82F6'
+  });
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     if (!form.title) { alert('Título é obrigatório'); return; }
     setSaving(true);
-    try { await scheduleAPI.create(form); onSaved(); } catch { alert('Erro ao salvar'); } finally { setSaving(false); }
+    try {
+      if (event) {
+        await scheduleAPI.update(event.id, form);
+      } else {
+        await scheduleAPI.create(form);
+      }
+      onSaved();
+    } catch { alert('Erro ao salvar'); } finally { setSaving(false); }
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-[#111a2e] rounded-2xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Novo Evento</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{event ? 'Editar Evento' : 'Novo Evento'}</h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Título *</label>
@@ -209,7 +225,7 @@ function EventModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={onClose} className="px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-sm">Cancelar</button>
           <button onClick={handleSave} disabled={saving} className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-            {saving ? 'Salvando...' : 'Criar Evento'}
+            {saving ? 'Salvando...' : event ? 'Salvar Alterações' : 'Criar Evento'}
           </button>
         </div>
       </div>

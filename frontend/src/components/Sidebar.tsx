@@ -73,7 +73,7 @@ export default function Sidebar({
   const { user, logout, hasPermission } = useAuth();
 
   useEffect(() => {
-    settingsAPI.get().then(({ data }) => { if (data.logo_url) setLogoUrl(data.logo_url); }).catch(() => {});
+    settingsAPI.get().then(({ data }) => { if (data.logo_url) setLogoUrl(data.logo_url); }).catch(() => console.warn('Falha ao carregar logo'));
   }, []);
 
   const handleLogout = () => {

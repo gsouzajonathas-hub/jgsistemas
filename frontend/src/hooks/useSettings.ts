@@ -28,7 +28,7 @@ export function useSettings() {
           cache = data;
           listeners.forEach(l => l(data));
         })
-        .catch(() => {});
+        .catch(() => console.warn('Falha ao carregar configurações'));
     }
     return () => { listeners.delete(notify); };
   }, []);

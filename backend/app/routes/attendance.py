@@ -96,7 +96,7 @@ async def attendance_report(class_group_id: int, current_user=Depends(require_pe
             select(func.count()).select_from(Attendance).where(
                 Attendance.student_id == sid,
                 Attendance.class_group_id == class_group_id,
-                Attendance.status == "present"
+                Attendance.status.in_(["present", "justified", "late"])
             )
         )
         absent = await db.execute(

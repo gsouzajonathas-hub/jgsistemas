@@ -389,7 +389,7 @@ function ContractModal({ plan, onClose, onDone }: {
     studentsAPI.list({ limit: 500 }).then(({ data }) => {
       const arr = Array.isArray(data) ? data : (data.students || []);
       setStudents(arr);
-    }).catch(() => {});
+    }).catch(() => alert('Erro ao carregar alunos'));
   }, []);
 
   const total = mode === 'upfront' ? plan.upfront_value : plan.final_value;

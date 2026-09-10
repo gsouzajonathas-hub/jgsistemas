@@ -19,10 +19,14 @@ export default function Enrollments() {
   useEffect(() => { load(); }, [statusFilter]);
 
   const handleAction = async (id: number, action: string) => {
-    if (action === 'cancel') await enrollmentsAPI.cancel(id);
-    else if (action === 'suspend') await enrollmentsAPI.suspend(id);
-    else if (action === 'renew') await enrollmentsAPI.renew(id);
-    load();
+    try {
+      if (action === 'cancel') await enrollmentsAPI.cancel(id);
+      else if (action === 'suspend') await enrollmentsAPI.suspend(id);
+      else if (action === 'renew') await enrollmentsAPI.renew(id);
+      load();
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Erro ao executar ação');
+    }
   };
 
   const statusLabels: Record<string, string> = { active: 'Ativa', cancelled: 'Cancelada', suspended: 'Trancada', transferred: 'Transferida', renewed: 'Renovada' };

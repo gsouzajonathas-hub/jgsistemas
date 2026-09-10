@@ -119,7 +119,13 @@ async def list_students(
 ):
     q = select(Student)
     if search:
-        q = q.where(Student.full_name.ilike(f"%{search}%"))
+        from sqlalchemy import or_
+        q = q.where(or_(
+            Student.full_name.ilike(f"%{search}%"),
+            Student.cpf.ilike(f"%{search}%"),
+            Student.email.ilike(f"%{search}%"),
+            Student.phone.ilike(f"%{search}%"),
+        ))
     if status:
         q = q.where(Student.status == status)
     q = q.order_by(Student.full_name).offset(skip).limit(limit)
@@ -128,7 +134,13 @@ async def list_students(
 
     count_q = select(Student)
     if search:
-        count_q = count_q.where(Student.full_name.ilike(f"%{search}%"))
+        from sqlalchemy import or_
+        count_q = count_q.where(or_(
+            Student.full_name.ilike(f"%{search}%"),
+            Student.cpf.ilike(f"%{search}%"),
+            Student.email.ilike(f"%{search}%"),
+            Student.phone.ilike(f"%{search}%"),
+        ))
     if status:
         count_q = count_q.where(Student.status == status)
     from sqlalchemy import func
@@ -298,8 +310,17 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
 
     from sqlalchemy import delete as sa_delete, or_
-    from app.models.financial import Carne, Installment, Payment, Discount
+    from app.models.financial import Carne, Installment, Payment, Discount, FinancialContract
     from app.models.materials import MaterialSale
+    from app.models.evaluation import Evaluation
+    from app.models.attendance import Attendance
+    from app.models.certificate import Certificate
+    from app.models.enrollment import Enrollment
+
+    await db.execute(sa_delete(Evaluation).where(Evaluation.student_id == student_id))
+    await db.execute(sa_delete(Attendance).where(Attendance.student_id == student_id))
+    await db.execute(sa_delete(Certificate).where(Certificate.student_id == student_id))
+    await db.execute(sa_delete(Enrollment).where(Enrollment.student_id == student_id))
 
     carnet_ids = select(Carne.id).where(Carne.student_id == student_id)
     inst_filter = or_(
@@ -312,6 +333,7 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     await db.execute(sa_delete(Carne).where(Carne.student_id == student_id))
     await db.execute(sa_delete(Discount).where(Discount.student_id == student_id))
     await db.execute(sa_delete(MaterialSale).where(MaterialSale.student_id == student_id))
+    await db.execute(sa_delete(FinancialContract).where(FinancialContract.student_id == student_id))
 
     await log_audit(db, current_user, "student.delete", "student", student_id,
                     details=student.full_name, ip_address=client_ip(request))

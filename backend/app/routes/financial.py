@@ -573,6 +573,8 @@ async def register_payment(data: PaymentSchema, current_user=Depends(require_per
         raise HTTPException(status_code=400, detail="Esta mensalidade já está paga")
     if installment.status == "cancelled":
         raise HTTPException(status_code=400, detail="Esta mensalidade está cancelada")
+    if data.amount <= 0:
+        raise HTTPException(status_code=400, detail="Valor do pagamento deve ser maior que zero")
 
     pay_date = date.fromisoformat(data.payment_date) if data.payment_date else date.today()
     installment.status = "paid"
@@ -643,7 +645,8 @@ async def financial_dashboard(month: str = "", current_user=Depends(require_perm
 
     total_revenue_r, total_received_r, total_to_due_r, total_overdue_r, \
         total_expected_r, count_paid_r, count_pending_r, count_overdue_r = await asyncio.gather(
-        db.execute(select(func.sum(Payment.amount))),
+        db.execute(select(func.sum(Payment.amount)).where(
+            Payment.payment_date >= month_start, Payment.payment_date <= month_end)),
         db.execute(select(func.sum(Installment.amount)).where(
             Installment.paid_date >= month_start, Installment.paid_date <= month_end)),
         db.execute(select(func.sum(Installment.amount)).where(
@@ -651,7 +654,9 @@ async def financial_dashboard(month: str = "", current_user=Depends(require_perm
             Installment.due_date >= month_start,
             Installment.due_date <= month_end,
             Installment.due_date >= today)),
-        db.execute(select(func.sum(Installment.amount)).where(Installment.status == "overdue")),
+        db.execute(select(func.sum(Installment.amount)).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today)),
         db.execute(select(func.sum(Installment.amount)).where(
             Installment.status != "cancelled",
             Installment.due_date >= month_start,
@@ -662,7 +667,9 @@ async def financial_dashboard(month: str = "", current_user=Depends(require_perm
             Installment.status == "pending",
             Installment.due_date >= month_start,
             Installment.due_date <= month_end)),
-        db.execute(select(func.count()).select_from(Installment).where(Installment.status == "overdue")),
+        db.execute(select(func.count()).select_from(Installment).where(
+            Installment.status.notin_(["paid", "cancelled"]),
+            Installment.due_date < today)),
     )
 
     return {

@@ -54,6 +54,9 @@ async def get_settings(current_user=Depends(get_current_user), db: AsyncSession 
 
 @router.put("")
 async def update_settings(data: SettingsSchema, request: Request, current_user=Depends(require_permission("settings")), db: AsyncSession = Depends(get_db)):
+    if data.due_day < 1 or data.due_day > 31:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Dia de vencimento deve estar entre 1 e 31")
     s = await _get_settings(db)
     for k, v in data.model_dump().items():
         setattr(s, k, v)
@@ -70,7 +73,13 @@ async def upload_logo(request: Request, file: UploadFile = File(...), current_us
                              content_type=file.content_type or "image/png")
 
     s = await _get_settings(db)
+    old_ref = s.logo_url
     s.logo_url = ref
+    if old_ref and storage.is_supabase_ref(old_ref) and old_ref != ref:
+        try:
+            storage.delete(old_ref)
+        except Exception:
+            pass
     await log_audit(db, current_user, "settings.logo_upload", "settings", s.id,
                     details=filename, ip_address=client_ip(request))
     await db.commit()

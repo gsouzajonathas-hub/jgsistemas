@@ -29,7 +29,7 @@ export default function Certificates() {
 
   const loadCertificates = () => {
     setLoading(true);
-    certificatesAPI.list().then(({ data }) => setCertificates(data)).catch(() => {}).finally(() => setLoading(false));
+    certificatesAPI.list().then(({ data }) => setCertificates(data)).catch(() => alert('Erro ao carregar certificados')).finally(() => setLoading(false));
   };
 
   useEffect(loadCertificates, []);

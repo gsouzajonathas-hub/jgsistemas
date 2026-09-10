@@ -84,15 +84,19 @@ function InstallmentsTab() {
   };
 
   const handlePayment = async (installmentId: number, method: string) => {
-    const { data } = await financialAPI.registerPayment({
-      installment_id: installmentId,
-      amount: installments.find(i => i.id === installmentId)?.amount || 0,
-      payment_date: new Date().toISOString().split('T')[0],
-      payment_method: method,
-    });
-    load();
-    if (data?.payment_id) {
-      await downloadReceipt(data.payment_id, data.receipt_number);
+    try {
+      const { data } = await financialAPI.registerPayment({
+        installment_id: installmentId,
+        amount: installments.find(i => i.id === installmentId)?.amount || 0,
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: method,
+      });
+      load();
+      if (data?.payment_id) {
+        await downloadReceipt(data.payment_id, data.receipt_number);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Erro ao registrar pagamento');
     }
   };
 

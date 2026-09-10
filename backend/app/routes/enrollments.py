@@ -157,6 +157,8 @@ async def renew_enrollment(enrollment_id: int, current_user=Depends(require_perm
         status="active"
     )
     db.add(new_enrollment)
+    if cg.current_count > 0:
+        cg.current_count -= 1
     cg.current_count += 1
     await db.commit()
     return {"message": "Matrícula renovada", "new_id": new_enrollment.id}
