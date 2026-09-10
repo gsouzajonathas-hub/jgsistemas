@@ -167,12 +167,18 @@ async def delete_plan(plan_id: int, current_user=Depends(require_permission("fin
     plan = result.scalar_one_or_none()
     if not plan:
         raise HTTPException(status_code=404, detail="Plano não encontrado")
-    used = (await db.execute(
+    # Parcelas e contratos referenciam o plano (o carnê referencia via parcela) —
+    # só exclui se nada o usa.
+    from app.models.financial import Installment, FinancialContract
+    used_in_installments = (await db.execute(
         select(func.count()).select_from(Installment).where(Installment.plan_id == plan_id)
     )).scalar() or 0
-    if used > 0:
+    used_in_contracts = (await db.execute(
+        select(func.count()).select_from(FinancialContract).where(FinancialContract.plan_id == plan_id)
+    )).scalar() or 0
+    if used_in_installments > 0 or used_in_contracts > 0:
         raise HTTPException(status_code=400,
-                            detail=f"Plano possui {used} parcela(s) vinculada(s). Desative-o em vez de excluir.")
+                            detail=f"Plano está em uso ({used_in_installments} parcela(s), {used_in_contracts} contrato(s)). Desative-o em vez de excluir.")
     await db.delete(plan)
     await db.commit()
     return {"message": "Plano excluído com sucesso"}

@@ -83,6 +83,13 @@ async def delete_course(course_id: int, request: Request,
             status_code=400,
             detail="Curso possui turmas vinculadas. Exclua ou reatribua as turmas antes de excluir o curso."
         )
+    # Desvincula planos financeiros que apontam para o curso (course_id nullable).
+    # Sem isso, um plano ligado ao curso e sem turmas quebrava o delete com violação de FK.
+    from sqlalchemy import update as sa_update
+    from app.models.financial import FinancialPlan
+    await db.execute(
+        sa_update(FinancialPlan).where(FinancialPlan.course_id == course_id).values(course_id=None)
+    )
     await log_audit(db, current_user, "course.delete", "course", course_id,
                     details=f"name={course.name}", ip_address=request.client.host if request.client else None)
     await db.delete(course)

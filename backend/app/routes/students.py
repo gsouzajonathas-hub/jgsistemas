@@ -322,7 +322,6 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     await db.execute(sa_delete(Evaluation).where(Evaluation.student_id == student_id))
     await db.execute(sa_delete(Attendance).where(Attendance.student_id == student_id))
     await db.execute(sa_delete(Certificate).where(Certificate.student_id == student_id))
-    await db.execute(sa_delete(Enrollment).where(Enrollment.student_id == student_id))
 
     carnet_ids = select(Carne.id).where(Carne.student_id == student_id)
     inst_filter = or_(
@@ -332,10 +331,13 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     inst_ids = select(Installment.id).where(inst_filter)
     await db.execute(sa_delete(Payment).where(Payment.installment_id.in_(inst_ids)))
     await db.execute(sa_delete(Installment).where(inst_filter))
+    # Ordem importa: Carne.enrollment_id referencia enrollments — apaga os carnês
+    # ANTES das matrículas, senão o Postgres viola a FK (remove o erro de exclusão).
     await db.execute(sa_delete(Carne).where(Carne.student_id == student_id))
     await db.execute(sa_delete(Discount).where(Discount.student_id == student_id))
     await db.execute(sa_delete(MaterialSale).where(MaterialSale.student_id == student_id))
     await db.execute(sa_delete(FinancialContract).where(FinancialContract.student_id == student_id))
+    await db.execute(sa_delete(Enrollment).where(Enrollment.student_id == student_id))
 
     await log_audit(db, current_user, "student.delete", "student", student_id,
                     details=student.full_name, ip_address=client_ip(request))

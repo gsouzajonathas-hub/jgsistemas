@@ -120,6 +120,28 @@ async def delete_class(class_id: int, request: Request, current_user=Depends(req
     ))).scalar() or 0
     if active > 0:
         raise HTTPException(status_code=400, detail=f"Turma possui {active} matrícula(s) ativa(s). Desative-as primeiro.")
+
+    # Cascade dos dados vinculados à turma. Antes, o `db.delete(cg)` quebrava com
+    # violação de FK no Postgres quando existia weight_config, frequência, avaliação,
+    # certificado ou matrícula inativa vinculados (erro ao excluir turma).
+    from sqlalchemy import delete as sa_delete, update as sa_update, select as sa_select
+    from app.models.certificate import Certificate
+    from app.models.attendance import Attendance
+    from app.models.evaluation import Evaluation
+    from app.models.weight_config import GradeWeightConfig
+    from app.models.financial import Carne
+
+    enrollment_ids = sa_select(Enrollment.id).where(Enrollment.class_group_id == cg.id)
+    # Preserva o financeiro: desvincula o carnê da matrícula em vez de apagar.
+    await db.execute(
+        sa_update(Carne).where(Carne.enrollment_id.in_(enrollment_ids)).values(enrollment_id=None)
+    )
+    await db.execute(sa_delete(GradeWeightConfig).where(GradeWeightConfig.class_group_id == cg.id))
+    await db.execute(sa_delete(Certificate).where(Certificate.class_group_id == cg.id))
+    await db.execute(sa_delete(Attendance).where(Attendance.class_group_id == cg.id))
+    await db.execute(sa_delete(Evaluation).where(Evaluation.class_group_id == cg.id))
+    await db.execute(sa_delete(Enrollment).where(Enrollment.class_group_id == cg.id))
+
     await log_audit(db, current_user, "class.delete", "class_group", class_id,
                     details=f"name={cg.name} course={cg.course_id} teacher={cg.teacher_id}",
                     ip_address=client_ip(request))
