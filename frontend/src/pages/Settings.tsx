@@ -84,8 +84,13 @@ export default function Settings() {
     if (!file) return;
     try {
       const { data } = await settingsAPI.uploadLogo(file);
-      setSettings((s: any) => ({ ...s, logo_url: data.logo_url }));
-      pushSettingsCache({ ...settings, logo_url: data.logo_url });
+      // Estado e cache global atualizados com o valor mais recente (sem closure stale),
+      // garantindo que a logo fixa permaneça até o usuário decidir trocar.
+      setSettings((s: any) => {
+        const next = { ...s, logo_url: data.logo_url };
+        pushSettingsCache(next);
+        return next;
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {

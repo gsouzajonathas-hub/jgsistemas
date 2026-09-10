@@ -72,11 +72,12 @@ def ensure_buckets() -> dict:
         return {"enabled": False, "note": "Supabase Storage não configurado; usando disco local"}
     storage = _storage()
     result = {}
-    for name, opts in {
+    expected = {
         BUCKET_LOGOS: {"public": True},
         BUCKET_UPLOADS: {"public": True},
         BUCKET_STUDENT_FILES: {"public": False},
-    }.items():
+    }
+    for name, opts in expected.items():
         try:
             storage.create_bucket(name, options=opts)
             result[name] = "created"
@@ -87,6 +88,17 @@ def ensure_buckets() -> dict:
             else:
                 logging.getLogger(__name__).warning("Falha ao criar bucket '%s': %s", name, e)
                 result[name] = "exists"
+            # Bucket já existia: garante que a política `public` está correta.
+            # Um bucket público de logo criado/alterado como privado quebra a URL
+            # gerada por get_public_url (o <img> dá 404 e a logo "some").
+            try:
+                info = storage.get_bucket(name)
+                is_public = bool(getattr(info, "public", False))
+                if is_public != bool(opts.get("public")):
+                    storage.update_bucket(name, {"public": bool(opts.get("public"))})
+                    result[name] = "updated-public"
+            except Exception:
+                pass
     return {"enabled": True, "buckets": result}
 
 
