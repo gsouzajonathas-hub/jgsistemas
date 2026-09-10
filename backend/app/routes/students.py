@@ -316,7 +316,9 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     from app.models.attendance import Attendance
     from app.models.certificate import Certificate
     from app.models.enrollment import Enrollment
+    from app.models.file_upload import FileUpload
 
+    await db.execute(sa_delete(FileUpload).where(FileUpload.student_id == student_id))
     await db.execute(sa_delete(Evaluation).where(Evaluation.student_id == student_id))
     await db.execute(sa_delete(Attendance).where(Attendance.student_id == student_id))
     await db.execute(sa_delete(Certificate).where(Certificate.student_id == student_id))

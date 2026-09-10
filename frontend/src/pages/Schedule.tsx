@@ -23,8 +23,8 @@ export default function Schedule() {
   useEffect(() => { load(); }, [currentMonth]);
 
   const handleDelete = async (id: number) => {
-    try { await scheduleAPI.delete(id); load(); }
-    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir evento'); }
+    try { await scheduleAPI.delete(id); setDeleteEventId(null); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir evento'); setDeleteEventId(null); }
   };
 
   const typeConfig: Record<string, { icon: any; color: string; label: string }> = {
@@ -145,7 +145,7 @@ export default function Schedule() {
           title="Excluir evento"
           message="Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteEventId); setDeleteEventId(null); }}
+          onConfirm={() => handleDelete(deleteEventId)}
           onCancel={() => setDeleteEventId(null)}
         />
       )}

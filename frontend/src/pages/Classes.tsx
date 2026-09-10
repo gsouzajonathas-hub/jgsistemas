@@ -106,7 +106,7 @@ export default function Classes() {
           title="Excluir turma"
           message="Tem certeza que deseja excluir esta turma? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}

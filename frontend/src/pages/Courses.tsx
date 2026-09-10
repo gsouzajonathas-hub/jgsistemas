@@ -96,7 +96,7 @@ export default function Courses() {
           title="Excluir curso"
           message="Tem certeza que deseja excluir este curso? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}

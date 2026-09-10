@@ -28,8 +28,13 @@ export default function Students() {
   useEffect(() => { loadStudents(); }, [page, search, statusFilter]);
 
   const handleDelete = async (id: number) => {
-    try { await studentsAPI.delete(id); loadStudents(); }
-    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir aluno'); }
+    try {
+      await studentsAPI.delete(id);
+      setDeleteConfirm(null);
+      loadStudents();
+    } catch (e: any) {
+      alert(e.response?.data?.detail || 'Erro ao excluir aluno');
+    }
   };
 
   const statusLabels: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', transferred: 'Transferido', suspended: 'Suspenso', graduated: 'Formado' };
@@ -133,7 +138,7 @@ export default function Students() {
           title="Excluir aluno"
           message="Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}

@@ -29,8 +29,8 @@ export default function Evaluations() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
-    try { await evaluationsAPI.delete(id); load(); }
-    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir avaliação'); }
+    try { await evaluationsAPI.delete(id); setDeleteEvalId(null); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir avaliação'); setDeleteEvalId(null); }
   };
 
   const groups = evals.reduce<Record<number, ClassEvalGroup>>((acc, e) => {
@@ -114,7 +114,7 @@ export default function Evaluations() {
           title="Excluir avaliação"
           message="Tem certeza que deseja excluir esta avaliação? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteEvalId); setDeleteEvalId(null); }}
+          onConfirm={() => handleDelete(deleteEvalId)}
           onCancel={() => setDeleteEvalId(null)}
         />
       )}

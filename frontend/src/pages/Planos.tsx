@@ -70,8 +70,8 @@ export default function Planos() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (p: CoursePlan) => {
-    try { await plansAPI.delete(p.id); load(); }
-    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir plano'); }
+    try { await plansAPI.delete(p.id); setDeletePlan(null); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir plano'); setDeletePlan(null); }
   };
 
   const toggleActive = async (p: CoursePlan) => {
@@ -189,7 +189,7 @@ export default function Planos() {
           title="Excluir plano"
           message={`Excluir o plano "${deletePlan.name}"? Esta ação não pode ser desfeita.`}
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deletePlan); setDeletePlan(null); }}
+          onConfirm={() => handleDelete(deletePlan)}
           onCancel={() => setDeletePlan(null)}
         />
       )}

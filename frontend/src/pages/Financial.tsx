@@ -225,8 +225,8 @@ function MaterialsTab() {
   useEffect(() => { load(); }, [search]);
 
   const handleDelete = async (id: number) => {
-    try { await materialsAPI.delete(id); load(); }
-    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir material'); }
+    try { await materialsAPI.delete(id); setDeleteMaterialId(null); load(); }
+    catch (e: any) { alert(e.response?.data?.detail || 'Erro ao excluir material'); setDeleteMaterialId(null); }
   };
 
   const handleSell = (m: TeachingMaterial) => {
@@ -334,7 +334,7 @@ function MaterialsTab() {
           title="Excluir material"
           message="Tem certeza que deseja excluir este material? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteMaterialId); setDeleteMaterialId(null); }}
+          onConfirm={() => handleDelete(deleteMaterialId)}
           onCancel={() => setDeleteMaterialId(null)}
         />
       )}

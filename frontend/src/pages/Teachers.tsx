@@ -111,7 +111,7 @@ export default function Teachers() {
           title="Excluir professor"
           message="Tem certeza que deseja excluir este professor? Esta ação não pode ser desfeita."
           confirmLabel="Sim, excluir"
-          onConfirm={() => { handleDelete(deleteConfirm); setDeleteConfirm(null); }}
+          onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
       )}
