@@ -17,7 +17,7 @@ D-09 | Ações do super admin entram na trilha de auditoria com destaque via nov
 D-10 | Recibo de venda de material passa a usar o mesmo formato do Financeiro: `REC-{ano}-{contagem:05d}` (recibo do Financeiro usa `REC-{ano}-{count:05d}` — financial.py:577-580). Confirmação na F3 (P-F3-01). (P-10 B) | Formato atual `MAT-{sale.id:06d}` — material_receipt_service.py:105 | Uniformidade entre os recibos do sistema
 D-11 | Escopo da entrega: somente chave PIX, recibo de material e conta super admin — nada mais (P-11 A) | Itens adicionais | Não há demanda extra confirmada
 D-12 | Falha ao salvar o PIX: o modal mantém tudo o que foi digitado e mostra "Erro ao salvar. Tente novamente." (P-13 A) | Apagar o formulário | Evita retrabalho e perda de digitação
-D-13 | Recuperação de senha do suporte = atualizar a variável de ambiente e reiniciar o backend; a conta é recriada/atualizada no startup (P-14 A) | Link de reset por e-mail | Fluxo de emergência independente de e-mail corporativo
+D-13 | Recuperação de senha do suporte via "esqueci minha senha" (link por e-mail). O seed cria a conta no primeiro boot com SUPPORT_ADMIN_PASSWORD, mas NÃO sobrescreve a senha em reinícios seguintes (P-14 A, alterada 2026-09-10) | Atualizar a env e reiniciar (sobrescrevia a senha a cada boot) | A senha gravada pelo usuário não pode ser revertida pelo seed a cada reinício — senão o login cai após logout/redeploy |
 D-14 | Recibo de material (`GET /sales/{sale_id}/receipt`) exige apenas autenticação (qualquer role logada), não role específica — valida o R3 da base 02-AREA-venda-materiais.md | Restrição por role (admin/secretary) | Dado não sensível; consistente com o recibo financeiro; fechou o achado BAIXA da F6
 ```
 

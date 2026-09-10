@@ -52,8 +52,11 @@ async def test_seed_e_idempotente_nao_duplica(client, db_session, monkeypatch):
     assert count == 1
 
 
-async def test_seed_atualiza_role_e_senha_de_usuario_existente(client, db_session, monkeypatch):
-    # Usuário comum existente vira super_admin no seed (D-13: atualizar role/senha/nome)
+async def test_seed_atualiza_role_e_nome_mas_nao_a_senha_de_usuario_existente(client, db_session, monkeypatch):
+    # Usuário comum existente vira super_admin no seed (D-13: atualizar role/status).
+    # A senha NÃO é sobrescrita no boot: ela só muda quando o usuário pede
+    # ("esqueci minha senha"). Antes, o seed resetava a hash a cada startup,
+    # então o login parava de funcionar após logout/reinício.
     email = "seed-update@teste.local"
     user = User(
         name="Comum",
@@ -72,7 +75,7 @@ async def test_seed_atualiza_role_e_senha_de_usuario_existente(client, db_sessio
     with TestClient(app):
         pass
 
-    # Query escalar NIa identidade map p/ evitar staleness da sessão compartilhada.
+    # Query escalar foge do identity map p/ evitar staleness da sessão compartilhada.
     role_db = (await db_session.execute(
         select(User.role).where(User.email == email)
     )).scalar()
@@ -84,8 +87,8 @@ async def test_seed_atualiza_role_e_senha_de_usuario_existente(client, db_sessio
     )).scalar()
     assert role_db == "super_admin"
     assert name_db == "Suporte JG Sistemas"  # default
-    assert hash_db != hash_antigo
-    assert hash_db != hash_password("senha-antiga-123")
+    # CORREÇÃO: a senha gravada no banco permanece intacta após o boot.
+    assert hash_db == hash_antigo
 
 
 async def test_seed_sem_env_vars_e_no_op(client, db_session, monkeypatch):

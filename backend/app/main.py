@@ -113,9 +113,12 @@ async def lifespan(app):
             support = result.scalar_one_or_none()
             support_name = os.getenv("SUPPORT_ADMIN_NAME", "Suporte JG Sistemas").strip() or "Suporte JG Sistemas"
             if support:
+                # Conta de suporte já existe: sincronizamos papel/nome/status, mas NÃO
+                # sobrescrevemos a senha. A senha SÓ muda quando o usuário solicita
+                # ("esqueci minha senha") — antigamente o seed resetava a hash a cada
+                # boot e o login parava de funcionar após logout/reinício.
                 support.role = "super_admin"
                 support.name = support_name
-                support.password_hash = hash_password(_support_password)
                 support.is_active = True
             else:
                 support = User(
