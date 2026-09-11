@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { settingsAPI } from '../services/api';
+import { useSettings } from '../hooks/useSettings';
 import {
   LayoutDashboard, Users, GraduationCap, UserPlus, BookOpen, Presentation,
   DollarSign, Calendar, BarChart3, CreditCard, FileText, History,
@@ -67,14 +66,10 @@ export default function Sidebar({
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }) {
-  const [logoUrl, setLogoUrl] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, hasPermission } = useAuth();
-
-  useEffect(() => {
-    settingsAPI.get().then(({ data }) => { if (data.logo_url) setLogoUrl(data.logo_url); }).catch(() => console.warn('Falha ao carregar logo'));
-  }, []);
+  const { settings } = useSettings();
 
   const handleLogout = () => {
     logout();
@@ -86,8 +81,8 @@ export default function Sidebar({
       <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200/70 dark:border-white/10 flex-shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-3 min-w-0">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-xl object-contain flex-shrink-0" />
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt="Logo" className="w-10 h-10 rounded-xl object-contain flex-shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-glow">
                 <GraduationCap className="w-5 h-5 text-white" />
