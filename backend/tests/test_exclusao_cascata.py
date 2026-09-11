@@ -125,6 +125,38 @@ async def test_excluir_aluno_com_todas_dependencias(client, auth_headers, aluno,
     assert await _count(db_session, Certificate, student_id=alvo.id) == 0
 
 
+async def test_excluir_aluno_com_carne_student_divergente(client, auth_headers, turma, db_session):
+    """Regressão produção (OC-2026-0006): carnê com student_id de OUTRO aluno,
+    mas enrollment_id apontando para matrícula do aluno alvo. O delete por
+    student_id não o encontrava -> FK carnets_enrollment_id_fkey violada (500)."""
+    dono = await _aluno_novo(db_session, "Dono do Carnê", "99988877766")
+    alvo = await _aluno_novo(db_session, "Alvo do Carnê Divergente", "88899977755")
+
+    matricula = Enrollment(
+        student_id=alvo.id, class_group_id=turma.id,
+        enrollment_date=date(2026, 2, 1), status="inactive",
+    )
+    db_session.add(matricula)
+    await db_session.commit()
+
+    carne = Carne(
+        student_id=dono.id, enrollment_id=matricula.id, total_installments=1,
+        installment_value=100, first_due_date=date(2026, 3, 10), status="active",
+    )
+    db_session.add(carne)
+    await db_session.commit()
+    carne_id = carne.id
+    matricula_id = matricula.id
+
+    resp = client.delete(f"/api/students/{alvo.id}", headers=auth_headers)
+    assert resp.status_code == 200, resp.text
+
+    assert await _count(db_session, Enrollment, id=matricula_id) == 0
+    assert await _count(db_session, Carne, id=carne_id) == 0
+    # O aluno dono do student_id do carnê continua intacto (dado legado preservado)
+    assert await _count(db_session, Student, id=dono.id) == 1
+
+
 async def _turma_isolada(db, curso, professor, nome: str):
     from app.models.class_group import ClassGroup
     from datetime import time

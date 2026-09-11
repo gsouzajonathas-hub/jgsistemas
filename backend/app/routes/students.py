@@ -323,7 +323,14 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     await db.execute(sa_delete(Attendance).where(Attendance.student_id == student_id))
     await db.execute(sa_delete(Certificate).where(Certificate.student_id == student_id))
 
-    carnet_ids = select(Carne.id).where(Carne.student_id == student_id)
+    # Carnês podem apontar por enrollment_id para uma matrícula do aluno mesmo com
+    # student_id divergente (dados legados de criação). Cobrimos os dois vínculos.
+    enrollment_ids = select(Enrollment.id).where(Enrollment.student_id == student_id)
+    carnet_filter = or_(
+        Carne.student_id == student_id,
+        Carne.enrollment_id.in_(enrollment_ids)
+    )
+    carnet_ids = select(Carne.id).where(carnet_filter)
     inst_filter = or_(
         Installment.student_id == student_id,
         Installment.carnet_id.in_(carnet_ids)
@@ -333,7 +340,7 @@ async def delete_student(student_id: int, request: Request, current_user=Depends
     await db.execute(sa_delete(Installment).where(inst_filter))
     # Ordem importa: Carne.enrollment_id referencia enrollments — apaga os carnês
     # ANTES das matrículas, senão o Postgres viola a FK (remove o erro de exclusão).
-    await db.execute(sa_delete(Carne).where(Carne.student_id == student_id))
+    await db.execute(sa_delete(Carne).where(carnet_filter))
     await db.execute(sa_delete(Discount).where(Discount.student_id == student_id))
     await db.execute(sa_delete(MaterialSale).where(MaterialSale.student_id == student_id))
     await db.execute(sa_delete(FinancialContract).where(FinancialContract.student_id == student_id))
