@@ -23,6 +23,18 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.dispatchEvent(new Event('auth:logout'));
     }
+    if (error.response) {
+      const data = error.response.data;
+      const body =
+        typeof data === 'string' || data instanceof Blob || !data
+          ? String(data ?? '')
+          : data && data.detail
+            ? String(data.detail)
+            : JSON.stringify(data);
+      if (!data || typeof data !== 'object' || !('detail' in data)) {
+        error.response.data = { detail: `HTTP ${error.response.status}: ${body.slice(0, 240)}` };
+      }
+    }
     return Promise.reject(error);
   }
 );
