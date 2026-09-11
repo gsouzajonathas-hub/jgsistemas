@@ -3,7 +3,7 @@ import type { User, Student, Enrollment, Installment, CalendarEvent, TeachingMat
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 30000,
+  timeout: 120000,
   headers: { 'Content-Type': 'application/json' }
 });
 
